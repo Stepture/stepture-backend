@@ -62,3 +62,5 @@ notes.txt
 myapp.dump
 myapp.sql
 
+
+/generated/prisma
