@@ -3,9 +3,20 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { join } from 'path';
 import { existsSync, mkdirSync, writeFileSync } from 'fs';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  app.use(cookieParser());
+
+  app.enableCors({
+    origin: [
+      process.env.CORS_ORIGIN || 'http://localhost:3000',
+      process.env.CORS_CHROME_EXTENSION ||
+        'chrome-extension://nmmhkkegccagdldgiimedpiccmgmieda',
+    ],
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Stepture API')

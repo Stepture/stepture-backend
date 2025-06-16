@@ -26,6 +26,7 @@ model Users {
   email    String  @unique
   name     String?
   password String
+  image    String?
 
   googleId     String?   @unique
   accessToken  String?
