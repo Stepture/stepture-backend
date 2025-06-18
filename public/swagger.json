@@ -43,12 +43,12 @@
         ]
       }
     },
-    "/auth/session": {
-      "get": {
-        "operationId": "AuthController_getMe",
+    "/auth/logout": {
+      "post": {
+        "operationId": "AuthController_logout",
         "parameters": [],
         "responses": {
-          "200": {
+          "201": {
             "description": ""
           }
         },
@@ -57,9 +57,23 @@
         ]
       }
     },
-    "/auth/logout": {
+    "/auth/refresh-token": {
+      "post": {
+        "operationId": "AuthController_refreshToken",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/auth/me": {
       "get": {
-        "operationId": "AuthController_logout",
+        "operationId": "AuthController_getProfile",
         "parameters": [],
         "responses": {
           "200": {

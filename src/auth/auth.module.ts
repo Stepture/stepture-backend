@@ -8,6 +8,10 @@ import refreshJwtConfig from './config/refresh-jwt.config';
 import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from 'src/users/users.module';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { RefreshJwtStrategy } from './strategies/refresh-jwt.strategy';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { RefreshJwtAuthGuard } from './guards/refresh-jwt-auth.guard';
 
 @Module({
   imports: [
@@ -20,6 +24,14 @@ import { GoogleStrategy } from './strategies/google.strategy';
     UsersModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, GoogleStrategy],
+  providers: [
+    AuthService,
+    GoogleStrategy,
+    JwtStrategy,
+    RefreshJwtStrategy,
+    JwtAuthGuard,
+    RefreshJwtAuthGuard,
+  ],
+  exports: [JwtAuthGuard, RefreshJwtAuthGuard],
 })
 export class AuthModule {}

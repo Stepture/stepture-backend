@@ -3,7 +3,7 @@ import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import refreshJwtConfig from './config/refresh-jwt.config';
 import { ConfigType } from '@nestjs/config';
-import { AwthJwtPayload } from './types/auth.jwtPayload';
+import { AuthJwtPayload } from './types/auth.jwtPayload';
 import * as argon2 from 'argon2';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
@@ -16,13 +16,13 @@ export class AuthService {
     private refreshTokenConfig: ConfigType<typeof refreshJwtConfig>,
   ) {}
 
-  async login(userId: string) {
-    const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    return this.generateTokens(userId);
-  }
+  // async login(userId: string) {
+  //   const user = await this.userService.findOne(userId);
+  //   if (!user) {
+  //     throw new Error('User not found');
+  //   }
+  //   return this.generateTokens(userId);
+  // }
 
   async validateGoogleUser(googleUser: CreateUserDto) {
     const user = await this.userService.findOrCreateGoogleUser(googleUser);
@@ -32,8 +32,11 @@ export class AuthService {
     return user;
   }
 
-  async generateTokens(userId: string) {
-    const payload: AwthJwtPayload = { sub: userId };
+  async generateTokens(userId: string, name: string) {
+    const payload: AuthJwtPayload = {
+      sub: userId,
+      name: name,
+    };
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload),
       this.jwtService.signAsync(payload, this.refreshTokenConfig),
@@ -42,5 +45,21 @@ export class AuthService {
       accessToken,
       refreshToken,
     };
+  }
+
+  async refreshTokens(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(
+        refreshToken,
+        this.refreshTokenConfig,
+      );
+      if (!payload?.sub) {
+        throw new Error('Invalid refresh token payload');
+      }
+      console.log('Refresh token payload:', payload);
+      return this.generateTokens(payload.sub, payload.name);
+    } catch (error) {
+      throw new Error('Invalid or expired refresh token');
+    }
   }
 }
