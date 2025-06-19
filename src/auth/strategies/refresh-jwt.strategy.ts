@@ -31,9 +31,7 @@ export class RefreshJwtStrategy extends PassportStrategy(
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request): string | null => {
-          console.log('Extracting refresh token from request cookies');
           const cookies = request?.cookies as Cookies | undefined;
-          console.log('Cookies:', cookies?.refresh_token);
           if (!cookies || typeof cookies !== 'object') {
             return null;
           }

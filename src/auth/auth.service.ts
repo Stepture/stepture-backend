@@ -56,7 +56,7 @@ export class AuthService {
       if (!payload?.sub) {
         throw new Error('Invalid refresh token payload');
       }
-      console.log('Refresh token payload:', payload);
+
       return this.generateTokens(payload.sub, payload.name);
     } catch (error) {
       throw new Error('Invalid or expired refresh token');

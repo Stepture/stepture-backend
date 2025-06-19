@@ -83,14 +83,13 @@ export class AuthController {
     req: import('express').Request & { cookies: Record<string, string> },
     @Res({ passthrough: true }) res: Response,
   ) {
-    console.log('hit refresh token endpoint');
     const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken;
     if (!refreshToken) {
       return { message: 'No refresh token found' };
     }
     try {
       const tokens = await this.authService.refreshTokens(refreshToken);
-      console.log('New tokens generated:', tokens);
+
       res.cookie('access_token', tokens.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
@@ -114,7 +113,6 @@ export class AuthController {
   async getProfile(
     @Request() req: import('express').Request & { user?: Users },
   ) {
-    console.log('User profile request:', req.user);
     return {
       user: req.user,
       message: 'User profile retrieved successfully',
