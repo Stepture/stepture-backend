@@ -16,6 +16,7 @@ async function bootstrap() {
       process.env.CORS_CHROME_EXTENSION ||
         'chrome-extension://nmmhkkegccagdldgiimedpiccmgmieda',
     ],
+    credentials: true,
   });
 
   const config = new DocumentBuilder()

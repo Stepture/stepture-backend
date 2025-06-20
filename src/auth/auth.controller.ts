@@ -1,9 +1,13 @@
-import { Controller, Get, UseGuards, Request, Res } from '@nestjs/common';
+import { Controller, Get, UseGuards, Request, Res, Post } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { Public } from './decorators/public.decorator';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { Auth } from './decorators/auth.decorator';
+import { RefreshAuth } from './decorators/refresh-auth.decorator';
+import { Users } from '../../generated/prisma';
+
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -19,12 +23,18 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
-  async googleLoginCallback(@Request() req, @Res({ passthrough: true }) res) {
+  async googleLoginCallback(
+    @Request() req: import('express').Request & { user?: Users },
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const user = req.user;
     if (!user) {
       return { message: 'No user from Google' };
     }
-    const tokens = await this.authService.generateTokens(user.id || user.email);
+    const tokens = await this.authService.generateTokens(
+      user.id,
+      user.name ?? '',
+    );
     // Set HttpOnly cookies for access and refresh tokens
     res.cookie('access_token', tokens.accessToken, {
       httpOnly: true,
@@ -38,27 +48,18 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
-    res.redirect('http://localhost:3000/auth/success');
+    res.redirect(
+      process.env.GOOGLE_AUTH_SUCCESS_REDIRECT ??
+        'http://localhost:3000/auth/success',
+    );
   }
 
-  @Public()
-  @Get('session')
-  async getMe(@Request() req) {
-    const token = req.cookies['access_token'];
-    if (!token) {
-      return { message: 'No access token found' };
-    }
-
-    try {
-      const decoded = this.jwtService.verify(token);
-      return { user: decoded, isLoggedIn: true };
-    } catch (error) {
-      return { message: 'Invalid access token', isLoggedIn: false };
-    }
-  }
-
-  @Get('logout')
-  async logout(@Res() res: Response) {
+  @Auth()
+  @Post('logout')
+  async logout(
+    @Request() req: import('express').Request,
+    @Res() res: Response,
+  ) {
     res.clearCookie('access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -73,5 +74,49 @@ export class AuthController {
       path: '/',
     });
     res.json({ message: 'Logged out successfully' });
+  }
+
+  @RefreshAuth()
+  @Post('refresh-token')
+  async refreshToken(
+    @Request()
+    req: import('express').Request & { cookies: Record<string, string> },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken;
+    if (!refreshToken) {
+      return { message: 'No refresh token found' };
+    }
+    try {
+      const tokens = await this.authService.refreshTokens(refreshToken);
+
+      res.cookie('access_token', tokens.accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 15,
+      });
+      res.cookie('refresh_token', tokens.refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 24 * 7,
+      });
+      return { ...tokens, message: 'Tokens refreshed' };
+    } catch {
+      return { message: 'Invalid or expired refresh token' };
+    }
+  }
+
+  @Auth()
+  @Get('me')
+  async getProfile(
+    @Request() req: import('express').Request & { user?: Users },
+  ) {
+    return {
+      user: req.user,
+      message: 'User profile retrieved successfully',
+      isLoggedIn: true,
+    };
   }
 }

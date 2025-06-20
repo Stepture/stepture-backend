@@ -48,7 +48,7 @@ export class UsersService {
           name,
           accessToken,
           ...(encryptedRefreshToken && {
-            googleRefreshToken: encryptedRefreshToken,
+            refreshToken: encryptedRefreshToken,
           }),
           expiresAt: expiresAt || expiredAt,
         },
