@@ -16,9 +16,16 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       clientID: googleConfiguration.clientID,
       clientSecret: googleConfiguration.clientSecret,
       callbackURL: googleConfiguration.callBackURL,
-      scope: ['email', 'profile'],
+      scope: ['email', 'profile', 'https://www.googleapis.com/auth/drive'],
       passReqToCallback: true,
     });
+  }
+
+  authorizationParams(): Record<string, string> {
+    return {
+      access_type: 'offline',
+      prompt: 'consent',
+    };
   }
 
   async validate(
@@ -33,8 +40,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       name: profile.displayName,
       googleId: profile.id,
       image: profile.photos?.[0]?.value,
-      accessToken: profile.accessToken,
-      refreshToken: profile.refreshToken,
+      accessToken: accessToken,
+      refreshToken: refreshToken,
       expiresAt: new Date(Date.now() + 3600 * 1000),
       googleDriveRootFolderId: undefined,
     };

@@ -1,9 +1,8 @@
 import * as crypto from 'crypto';
 
 const ENCRYPTION_KEY =
-  process.env.ENCRYPTION_KEY || '0000000000000000000000000000000000'; // Must be 32 bytes (256 bits) for AES-256
-const IV_LENGTH = 16; // For AES, this is always 16
-
+  process.env.ENCRYPTION_KEY || '0000000000000000000000000000000000';
+const IV_LENGTH = 16;
 export function encryptRefreshToken(token: string): string {
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(
