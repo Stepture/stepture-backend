@@ -84,6 +84,20 @@
           "Auth"
         ]
       }
+    },
+    "/google-drive/upload-image": {
+      "post": {
+        "operationId": "GoogleDriveController_uploadImageToDrive",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
     }
   },
   "info": {

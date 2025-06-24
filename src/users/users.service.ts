@@ -4,6 +4,7 @@ import { PrismaService } from 'src/prisma.service';
 import { encryptRefreshToken } from '../common/utils/crypto.utils';
 import { google } from 'googleapis';
 import { access } from 'fs';
+import { GoogleDriveService } from '../google-drive/google-drive.service';
 
 @Injectable()
 export class UsersService {
@@ -83,7 +84,6 @@ export class UsersService {
           });
         }
       } catch (error) {
-        // console.error('Error creating Google Drive folder:', error);
         throw new Error('Failed to create Google Drive folder');
       }
     } else {
@@ -109,5 +109,31 @@ export class UsersService {
     return this.prisma.users.findUnique({
       where: { email },
     });
+  }
+
+  async getAccessTokenAndGoogleDriveRootId(id: string) {
+    const user = await this.prisma.users.findUnique({
+      where: { id },
+      select: {
+        accessToken: true,
+        refreshToken: true,
+        expiresAt: true,
+        googleDriveRootId: true,
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.expiresAt && user.expiresAt < new Date()) {
+      throw new Error('Access token has expired');
+    }
+
+    return {
+      accessToken: user.accessToken,
+      refreshToken: user.refreshToken,
+      googleDriveRootId: user.googleDriveRootId,
+    };
   }
 }
