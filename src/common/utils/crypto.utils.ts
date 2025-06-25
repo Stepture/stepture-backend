@@ -21,7 +21,7 @@ export function decryptRefreshToken(encrypted: string): string {
   const encryptedData = Buffer.from(encryptedText, 'hex');
   const decipher = crypto.createDecipheriv(
     'aes-256-cbc',
-    Buffer.from(ENCRYPTION_KEY, 'utf8'),
+    Buffer.from(ENCRYPTION_KEY, 'hex'),
     iv,
   );
   let decrypted = decipher.update(encryptedData, undefined, 'utf8');

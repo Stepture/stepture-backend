@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { PrismaService } from 'src/prisma.service';
-import { encryptRefreshToken } from '../common/utils/crypto.utils';
+import {
+  decryptRefreshToken,
+  encryptRefreshToken,
+} from '../common/utils/crypto.utils';
 import { google } from 'googleapis';
 import { access } from 'fs';
 import { GoogleDriveService } from '../google-drive/google-drive.service';
@@ -129,10 +132,13 @@ export class UsersService {
     if (user.expiresAt && user.expiresAt < new Date()) {
       throw new Error('Access token has expired');
     }
+    const decryptedRefreshToken = user.refreshToken
+      ? decryptRefreshToken(user.refreshToken)
+      : null;
 
     return {
       accessToken: user.accessToken,
-      refreshToken: user.refreshToken,
+      refreshToken: decryptedRefreshToken,
       googleDriveRootId: user.googleDriveRootId,
     };
   }
