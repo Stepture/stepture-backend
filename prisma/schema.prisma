@@ -56,23 +56,28 @@ model Documents {
 }
 
 model Steps {
-  id          String   @id @default(uuid(7)) @db.Uuid
-  title       String
-  description String?
-  type        StepType
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  documentId  String   @db.Uuid
+  id              String   @id @default(uuid(7)) @db.Uuid
+  stepDescription String
+  stepNumber      Float
+  type            StepType
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  documentId      String   @db.Uuid
 
   document   Documents    @relation(fields: [documentId], references: [id])
   screenshot Screenshots?
 }
 
 model Screenshots {
-  id        String   @id @default(uuid(7)) @db.Uuid
-  url       String
-  createdAt DateTime @default(now())
-  stepId    String   @unique @db.Uuid
+  id               String   @id @default(uuid(7)) @db.Uuid
+  url              String
+  viewportX        Int
+  viewportY        Int
+  pageX            Int
+  pageY            Int
+  devicePixelRatio Float
+  createdAt        DateTime @default(now())
+  stepId           String   @unique @db.Uuid
 
   step Steps @relation(fields: [stepId], references: [id])
 }
