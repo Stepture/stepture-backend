@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Steps" ALTER COLUMN "stepNumber" SET DATA TYPE DOUBLE PRECISION;
