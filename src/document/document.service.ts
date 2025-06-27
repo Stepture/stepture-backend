@@ -89,8 +89,8 @@ export class DocumentService {
     const document = await this.prisma.documents.findFirst({
       where: {
         id: documentId,
-        // userId,
-        // isDeleted: false,
+        userId,
+        isDeleted: false,
       },
       include: {
         steps: {
