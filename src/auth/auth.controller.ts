@@ -7,8 +7,12 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { Auth } from './decorators/auth.decorator';
 import { RefreshAuth } from './decorators/refresh-auth.decorator';
 import { Users } from '../../generated/prisma';
+import { ApiExtraModels, ApiTags } from '@nestjs/swagger';
+import { CreateUserDto } from 'src/users/dto/create-user.dto';
 
+@ApiTags('auth')
 @Controller('auth')
+@ApiExtraModels(CreateUserDto)
 export class AuthController {
   constructor(
     private readonly authService: AuthService,

@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import CreateDocumentDto from './dto/create-document.dto';
-import { create } from 'domain';
 
 @Injectable()
 export class DocumentService {
@@ -112,6 +111,9 @@ export class DocumentService {
       },
     });
 
+    if (!document) {
+      throw new BadRequestException('Document not found');
+    }
     return document;
   }
 }

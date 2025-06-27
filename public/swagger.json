@@ -25,7 +25,7 @@
           }
         },
         "tags": [
-          "Auth"
+          "auth"
         ]
       }
     },
@@ -39,7 +39,7 @@
           }
         },
         "tags": [
-          "Auth"
+          "auth"
         ]
       }
     },
@@ -53,7 +53,7 @@
           }
         },
         "tags": [
-          "Auth"
+          "auth"
         ]
       }
     },
@@ -67,7 +67,7 @@
           }
         },
         "tags": [
-          "Auth"
+          "auth"
         ]
       }
     },
@@ -81,7 +81,7 @@
           }
         },
         "tags": [
-          "Auth"
+          "auth"
         ]
       }
     },
@@ -89,13 +89,29 @@
       "post": {
         "operationId": "GoogleDriveController_uploadImageToDrive",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
           }
         },
         "tags": [
-          "GoogleDrive"
+          "google-drive"
         ]
       }
     },
@@ -114,12 +130,19 @@
           }
         },
         "responses": {
-          "201": {
-            "description": ""
+          "200": {
+            "description": "Document created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDocumentDto"
+                }
+              }
+            }
           }
         },
         "tags": [
-          "Document"
+          "document"
         ]
       }
     },
@@ -129,25 +152,55 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "List of user documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreateDocumentDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
-          "Document"
+          "document"
         ]
       }
     },
     "/document/{id}": {
       "get": {
         "operationId": "DocumentController_getDocumentById",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Document by ID",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDocumentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Document not found"
           }
         },
         "tags": [
-          "Document"
+          "document"
         ]
       }
     }
@@ -162,6 +215,177 @@
   "servers": [],
   "components": {
     "schemas": {
+      "CreateUserDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "description": "The email of the user",
+            "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "description": "The full name of the user",
+            "example": "John Doe"
+          },
+          "image": {
+            "type": "string",
+            "description": "URL to the user's profile image",
+            "example": "https://example.com/avatar.jpg"
+          },
+          "googleId": {
+            "type": "string",
+            "description": "Google OAuth ID",
+            "example": "google-oauth2|1234567890"
+          },
+          "accessToken": {
+            "type": "string",
+            "description": "Google OAuth Access Token",
+            "example": "ya29.a0AfH6SMBx..."
+          },
+          "refreshToken": {
+            "type": "string",
+            "description": "Google OAuth Refresh Token",
+            "example": "1//0g9a8hR...Rfa"
+          },
+          "expiresAt": {
+            "format": "date-time",
+            "type": "string",
+            "description": "Access token expiry date",
+            "example": "2025-06-11T12:34:56.789Z"
+          },
+          "googleDriveRootFolderId": {
+            "type": "string",
+            "description": "Google Drive Root Folder ID for the user",
+            "example": "0AJ9aBcD1EfGhUk9PVA"
+          }
+        },
+        "required": [
+          "email",
+          "googleId",
+          "accessToken",
+          "expiresAt"
+        ]
+      },
+      "StepType": {
+        "type": "string",
+        "enum": [
+          "STEP",
+          "TIPS",
+          "HEADER",
+          "ALERT"
+        ],
+        "description": "Type of step in the documentation"
+      },
+      "CreateScreenshotDto": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "Screenshot image URL",
+            "example": "https://example.com/screenshots/login-page.png",
+            "format": "url"
+          },
+          "viewportX": {
+            "type": "number",
+            "description": "Viewport width in pixels",
+            "example": 1920,
+            "minimum": 1
+          },
+          "viewportY": {
+            "type": "number",
+            "description": "Viewport height in pixels",
+            "example": 1080,
+            "minimum": 1
+          },
+          "pageX": {
+            "type": "number",
+            "description": "Page X coordinate where screenshot was taken",
+            "example": 0,
+            "minimum": 0
+          },
+          "pageY": {
+            "type": "number",
+            "description": "Page Y coordinate where screenshot was taken",
+            "example": 0,
+            "minimum": 0
+          },
+          "devicePixelRatio": {
+            "type": "number",
+            "description": "Device pixel ratio used for the screenshot",
+            "example": 1,
+            "minimum": 0.1,
+            "maximum": 5
+          }
+        },
+        "required": [
+          "url",
+          "viewportX",
+          "viewportY",
+          "pageX",
+          "pageY",
+          "devicePixelRatio"
+        ]
+      },
+      "CreateStepDto": {
+        "type": "object",
+        "properties": {
+          "stepDescription": {
+            "type": "string",
+            "description": "Detailed description of what this step involves",
+            "example": "Click on the \"Sign In\" button located in the top right corner",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "stepNumber": {
+            "type": "number",
+            "description": "The number/order of this step in the document",
+            "example": 1,
+            "minimum": 1
+          },
+          "type": {
+            "description": "Type of step in the documentation",
+            "example": "STEP",
+            "examples": {
+              "Regular Step": {
+                "value": "STEP",
+                "description": "A regular action step"
+              },
+              "Tip": {
+                "value": "TIPS",
+                "description": "A helpful tip or note"
+              },
+              "Header": {
+                "value": "HEADER",
+                "description": "A section header"
+              },
+              "Alert": {
+                "value": "ALERT",
+                "description": "Important warning or alert"
+              }
+            },
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/StepType"
+              }
+            ]
+          },
+          "screenshot": {
+            "description": "Optional screenshot that demonstrates this step",
+            "nullable": true,
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CreateScreenshotDto"
+              }
+            ]
+          }
+        },
+        "required": [
+          "stepDescription",
+          "stepNumber",
+          "type"
+        ]
+      },
       "CreateDocumentDto": {
         "type": "object",
         "properties": {
