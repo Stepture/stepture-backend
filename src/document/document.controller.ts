@@ -15,7 +15,7 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 
 @ApiTags('document')
 @Auth()
-@Controller('document')
+@Controller('documents')
 @ApiExtraModels(CreateStepDto, CreateScreenshotDto)
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
