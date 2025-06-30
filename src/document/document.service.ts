@@ -27,6 +27,7 @@ export class DocumentService {
                 screenshot: step.screenshot
                   ? {
                       create: {
+                        googleImageId: step.screenshot.googleImageId,
                         url: step.screenshot.url,
                         viewportX: step.screenshot.viewportX,
                         viewportY: step.screenshot.viewportY,

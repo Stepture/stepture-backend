@@ -115,7 +115,7 @@
         ]
       }
     },
-    "/document/create": {
+    "/documents/create": {
       "post": {
         "operationId": "DocumentController_createDocument",
         "parameters": [],
@@ -146,7 +146,7 @@
         ]
       }
     },
-    "/document": {
+    "/documents": {
       "get": {
         "operationId": "DocumentController_getAllDocuments",
         "parameters": [],
@@ -170,7 +170,7 @@
         ]
       }
     },
-    "/document/{id}": {
+    "/documents/{id}": {
       "get": {
         "operationId": "DocumentController_getDocumentById",
         "parameters": [
@@ -280,10 +280,15 @@
       "CreateScreenshotDto": {
         "type": "object",
         "properties": {
+          "googleImageId": {
+            "type": "string",
+            "description": "Google Drive image ID",
+            "example": "1A2B3C4D5E6F7G8H9I0J"
+          },
           "url": {
             "type": "string",
             "description": "Screenshot image URL",
-            "example": "https://example.com/screenshots/login-page.png",
+            "example": "https://lh3.googleusercontent.com/d/1A2B3C4D5E6F7G8H9I0J",
             "format": "url"
           },
           "viewportX": {
@@ -319,6 +324,7 @@
           }
         },
         "required": [
+          "googleImageId",
           "url",
           "viewportX",
           "viewportY",

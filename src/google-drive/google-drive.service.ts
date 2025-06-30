@@ -59,7 +59,7 @@ export class GoogleDriveService {
     return {
       statusCode: 201,
       publicUrl: fileRes.data.id
-        ? `https://drive.google.com/uc?id=${fileRes.data.id}`
+        ? `https://lh3.googleusercontent.com/d/${fileRes.data.id}`
         : null,
     };
   }

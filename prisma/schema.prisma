@@ -70,6 +70,7 @@ model Steps {
 
 model Screenshots {
   id               String   @id @default(uuid(7)) @db.Uuid
+  googleImageId    String
   url              String
   viewportX        Int
   viewportY        Int

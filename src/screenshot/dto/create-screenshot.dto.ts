@@ -1,10 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsUrl } from '@nestjs/class-validator';
+import { google } from 'googleapis';
 
 export class CreateScreenshotDto {
   @ApiProperty({
+    description: 'Google Drive image ID',
+    example: '1A2B3C4D5E6F7G8H9I0J',
+  })
+  googleImageId: string;
+
+  @ApiProperty({
     description: 'Screenshot image URL',
-    example: 'https://example.com/screenshots/login-page.png',
+    example: 'https://lh3.googleusercontent.com/d/1A2B3C4D5E6F7G8H9I0J',
     format: 'url',
   })
   @IsUrl()
