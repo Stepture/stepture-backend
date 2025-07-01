@@ -115,7 +115,7 @@
         ]
       }
     },
-    "/documents/create": {
+    "/documents": {
       "post": {
         "operationId": "DocumentController_createDocument",
         "parameters": [],
@@ -144,9 +144,7 @@
         "tags": [
           "document"
         ]
-      }
-    },
-    "/documents": {
+      },
       "get": {
         "operationId": "DocumentController_getAllDocuments",
         "parameters": [],
@@ -303,15 +301,15 @@
             "example": 1080,
             "minimum": 1
           },
-          "pageX": {
+          "viewportWidth": {
             "type": "number",
-            "description": "Page X coordinate where screenshot was taken",
+            "description": "viewportWidth coordinate where screenshot was taken",
             "example": 0,
             "minimum": 0
           },
-          "pageY": {
+          "viewportHeight": {
             "type": "number",
-            "description": "Page Y coordinate where screenshot was taken",
+            "description": "viewportHeight coordinate where screenshot was taken",
             "example": 0,
             "minimum": 0
           },
@@ -328,8 +326,8 @@
           "url",
           "viewportX",
           "viewportY",
-          "pageX",
-          "pageY",
+          "viewportWidth",
+          "viewportHeight",
           "devicePixelRatio"
         ]
       },
@@ -422,8 +420,8 @@
                   "url": "https://example.com/screenshots/login-page.png",
                   "viewportX": 1920,
                   "viewportY": 1080,
-                  "pageX": 0,
-                  "pageY": 0,
+                  "viewportWidth": 0,
+                  "viewportHeight": 0,
                   "devicePixelRatio": 1
                 }
               },
@@ -440,8 +438,8 @@
                   "url": "https://example.com/screenshots/username-field.png",
                   "viewportX": 1920,
                   "viewportY": 1080,
-                  "pageX": 0,
-                  "pageY": 100,
+                  "viewportWidth": 0,
+                  "viewportHeight": 100,
                   "devicePixelRatio": 1
                 }
               },
@@ -463,8 +461,8 @@
                   "url": "https://example.com/screenshots/signin-button.png",
                   "viewportX": 1920,
                   "viewportY": 1080,
-                  "pageX": 0,
-                  "pageY": 200,
+                  "viewportWidth": 0,
+                  "viewportHeight": 200,
                   "devicePixelRatio": 1
                 }
               }

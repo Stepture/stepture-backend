@@ -20,7 +20,7 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
-  @Post('create')
+  @Post('')
   @ApiBody({ type: CreateDocumentDto })
   @ApiOkResponse({
     description: 'Document created successfully',
@@ -31,6 +31,10 @@ export class DocumentController {
     @Body() createDocumentDto: CreateDocumentDto,
   ) {
     const userId = req.user.userId;
+
+    console.log('Creating document with steps:', createDocumentDto);
+    console.log(createDocumentDto.steps);
+
     return this.documentService.createDocumentsWithSteps(
       userId,
       createDocumentDto,

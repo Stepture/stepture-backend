@@ -58,6 +58,7 @@ export class GoogleDriveService {
 
     return {
       statusCode: 201,
+      imgId: fileRes.data.id,
       publicUrl: fileRes.data.id
         ? `https://lh3.googleusercontent.com/d/${fileRes.data.id}`
         : null,
