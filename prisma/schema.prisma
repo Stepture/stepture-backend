@@ -74,8 +74,8 @@ model Screenshots {
   url              String
   viewportX        Int
   viewportY        Int
-  pageX            Int
-  pageY            Int
+  viewportHeight   Int
+  viewportWidth    Int
   devicePixelRatio Float
   createdAt        DateTime @default(now())
   stepId           String   @unique @db.Uuid

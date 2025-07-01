@@ -34,20 +34,20 @@ export class CreateScreenshotDto {
   viewportY: number;
 
   @ApiProperty({
-    description: 'Page X coordinate where screenshot was taken',
+    description: 'viewportWidth coordinate where screenshot was taken',
     example: 0,
     minimum: 0,
   })
   @IsNumber()
-  pageX: number;
+  viewportWidth: number;
 
   @ApiProperty({
-    description: 'Page Y coordinate where screenshot was taken',
+    description: 'viewportHeight coordinate where screenshot was taken',
     example: 0,
     minimum: 0,
   })
   @IsNumber()
-  pageY: number;
+  viewportHeight: number;
 
   @ApiProperty({
     description: 'Device pixel ratio used for the screenshot',

@@ -31,8 +31,8 @@ export class DocumentService {
                         url: step.screenshot.url,
                         viewportX: step.screenshot.viewportX,
                         viewportY: step.screenshot.viewportY,
-                        pageX: step.screenshot.pageX,
-                        pageY: step.screenshot.pageY,
+                        viewportWidth: step.screenshot.viewportWidth,
+                        viewportHeight: step.screenshot.viewportHeight,
                         devicePixelRatio: step.screenshot.devicePixelRatio,
                       },
                     }
