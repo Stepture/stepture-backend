@@ -64,4 +64,31 @@ export class GoogleDriveService {
         : null,
     };
   }
+
+  async deleteImageFromDrive(
+    googleImageId: string,
+    userId: string,
+  ): Promise<void> {
+    try {
+      const { accessToken, refreshToken } =
+        await this.userService.getAccessTokenAndGoogleDriveRootId(userId);
+
+      const oauth2Client = new google.auth.OAuth2();
+      oauth2Client.setCredentials({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+
+      const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+      await drive.files.delete({
+        fileId: googleImageId,
+      });
+    } catch (error) {
+      console.error(
+        `Failed to delete image ${googleImageId} from Google Drive:`,
+        error,
+      );
+    }
+  }
 }

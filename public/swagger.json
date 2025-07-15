@@ -115,6 +115,78 @@
         ]
       }
     },
+    "/step/{id}": {
+      "delete": {
+        "operationId": "StepController_deleteStep",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Step ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Step deleted successfully. Associated screenshot will also be removed if it exists.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Step deleted successfully"
+                    },
+                    "deletedStep": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "example": "step-123"
+                        },
+                        "stepDescription": {
+                          "type": "string",
+                          "example": "Click the login button"
+                        },
+                        "stepNumber": {
+                          "type": "number",
+                          "example": 1.5
+                        },
+                        "type": {
+                          "type": "string",
+                          "example": "STEP"
+                        },
+                        "documentId": {
+                          "type": "string",
+                          "example": "doc-456"
+                        },
+                        "hadScreenshot": {
+                          "type": "boolean",
+                          "example": true
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Step not found or access denied"
+          },
+          "404": {
+            "description": "Step not found"
+          }
+        },
+        "tags": [
+          "step"
+        ]
+      }
+    },
     "/documents": {
       "post": {
         "operationId": "DocumentController_createDocument",
@@ -169,6 +241,76 @@
       }
     },
     "/documents/{id}": {
+      "put": {
+        "operationId": "DocumentController_updateDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PartialUpdateDocumentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document updated successfully (title and description only)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDocumentDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      },
+      "delete": {
+        "operationId": "DocumentController_deleteDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document deleted successfully (soft delete)"
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      },
       "get": {
         "operationId": "DocumentController_getDocumentById",
         "parameters": [
@@ -195,6 +337,91 @@
           },
           "404": {
             "description": "Document not found"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
+    },
+    "/documents/{id}/permanent": {
+      "delete": {
+        "operationId": "DocumentController_permanentDeleteDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document permanently deleted"
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
+    },
+    "/documents/{id}/restore": {
+      "put": {
+        "operationId": "DocumentController_restoreDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document restored successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateDocumentDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Deleted document not found"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
+    },
+    "/documents/deleted/list": {
+      "get": {
+        "operationId": "DocumentController_getDeletedDocuments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of user deleted documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreateDocumentDto"
+                  }
+                }
+              }
+            }
           }
         },
         "tags": [
@@ -389,6 +616,25 @@
           "stepNumber",
           "type"
         ]
+      },
+      "PartialUpdateDocumentDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the document",
+            "example": "Updated Document Title",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional detailed description of what this document covers",
+            "example": "Updated description of the document",
+            "nullable": true,
+            "maxLength": 1000
+          }
+        }
       },
       "CreateDocumentDto": {
         "type": "object",
