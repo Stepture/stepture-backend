@@ -45,9 +45,6 @@ export class StepController {
   })
   async deleteStep(@Request() req: any, @Param('id') stepId: string) {
     const userId = req.user.userId;
-
-    console.log('Deleting step:', stepId);
-
     return this.stepService.deleteStep(userId, stepId);
   }
 }

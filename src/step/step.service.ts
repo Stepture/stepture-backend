@@ -11,7 +11,6 @@ export class StepService {
 
   async deleteStep(userId: string, stepId: string) {
     try {
-      // First verify the step exists and the user owns the document
       const step = await this.prisma.steps.findFirst({
         where: {
           id: stepId,
@@ -41,15 +40,11 @@ export class StepService {
       return await this.prisma.$transaction(async (tx) => {
         // Delete screenshot from Google Drive first if it exists
         if (step.screenshot) {
-          console.log(
-            `Deleting screenshot ${step.screenshot.googleImageId} from Google Drive`,
-          );
           try {
             await this.googleDriveService.deleteImageFromDrive(
               step.screenshot.googleImageId,
               userId,
             );
-            console.log('Screenshot deleted from Google Drive successfully');
           } catch (error) {
             console.error(
               'Failed to delete screenshot from Google Drive:',

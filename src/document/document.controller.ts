@@ -11,7 +11,7 @@ import {
 import { DocumentService } from './document.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import CreateDocumentDto from './dto/create-document.dto';
-import PartialUpdateDocumentDto from './dto/partial-update-document.dto';
+import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import {
   ApiTags,
   ApiBody,
@@ -26,7 +26,7 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 @ApiTags('document')
 @Auth()
 @Controller('documents')
-@ApiExtraModels(CreateStepDto, CreateScreenshotDto, PartialUpdateDocumentDto)
+@ApiExtraModels(CreateStepDto, CreateScreenshotDto, UpdateDocumentWithStepsDto)
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
@@ -60,24 +60,25 @@ export class DocumentController {
 
   @Put(':id')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
-  @ApiBody({ type: PartialUpdateDocumentDto })
+  @ApiBody({ type: UpdateDocumentWithStepsDto })
   @ApiOkResponse({
-    description: 'Document updated successfully (title and description only)',
+    description:
+      'Document updated successfully with all nested changes (steps and screenshots)',
     type: CreateDocumentDto,
   })
   @ApiResponse({ status: 404, description: 'Document not found' })
   @ApiResponse({ status: 400, description: 'Bad request' })
-  async updateDocument(
+  async updateDocumentWithSteps(
     @Request() req: any,
     @Param('id') documentId: string,
-    @Body() updateDocumentDto: PartialUpdateDocumentDto,
+    @Body() updateDocumentWithStepsDto: UpdateDocumentWithStepsDto,
   ) {
     const userId = req.user.userId;
 
-    return this.documentService.updateDocument(
+    return this.documentService.updateDocumentWithSteps(
       documentId,
       userId,
-      updateDocumentDto,
+      updateDocumentWithStepsDto,
     );
   }
 

@@ -242,7 +242,7 @@
     },
     "/documents/{id}": {
       "put": {
-        "operationId": "DocumentController_updateDocument",
+        "operationId": "DocumentController_updateDocumentWithSteps",
         "parameters": [
           {
             "name": "id",
@@ -259,14 +259,14 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PartialUpdateDocumentDto"
+                "$ref": "#/components/schemas/UpdateDocumentWithStepsDto"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Document updated successfully (title and description only)",
+            "description": "Document updated successfully with all nested changes (steps and screenshots)",
             "content": {
               "application/json": {
                 "schema": {
@@ -617,22 +617,39 @@
           "type"
         ]
       },
-      "PartialUpdateDocumentDto": {
+      "UpdateDocumentWithStepsDto": {
         "type": "object",
         "properties": {
           "title": {
             "type": "string",
             "description": "The title of the document",
-            "example": "Updated Document Title",
+            "example": "Updated: How to Login to Admin Dashboard",
             "minLength": 1,
             "maxLength": 200
           },
           "description": {
             "type": "string",
             "description": "Optional detailed description of what this document covers",
-            "example": "Updated description of the document",
+            "example": "An updated comprehensive step-by-step guide for administrators",
             "nullable": true,
             "maxLength": 1000
+          },
+          "steps": {
+            "description": "Array of steps to update/add/delete",
+            "items": {
+              "type": "array"
+            },
+            "type": "array"
+          },
+          "deleteStepIds": {
+            "description": "Array of step IDs to delete",
+            "example": [
+              "0197c6c1-0666-7be1-bb32-464e9cd7789c"
+            ],
+            "items": {
+              "type": "array"
+            },
+            "type": "array"
           }
         }
       },

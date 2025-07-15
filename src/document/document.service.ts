@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import CreateDocumentDto from './dto/create-document.dto';
-import PartialUpdateDocumentDto from './dto/partial-update-document.dto';
+
+import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 
 @Injectable()
@@ -130,12 +131,13 @@ export class DocumentService {
     return document;
   }
 
-  async updateDocument(
+  async updateDocumentWithSteps(
     documentId: string,
     userId: string,
-    partialUpdateDocumentDto: PartialUpdateDocumentDto,
+    updateDocumentWithStepsDto: UpdateDocumentWithStepsDto,
   ) {
-    const { title, description } = partialUpdateDocumentDto;
+    const { title, description, steps, deleteStepIds } =
+      updateDocumentWithStepsDto;
 
     try {
       const existingDocument = await this.prisma.documents.findFirst({
@@ -144,47 +146,219 @@ export class DocumentService {
           userId,
           isDeleted: false,
         },
+        include: {
+          steps: {
+            include: {
+              screenshot: true,
+            },
+          },
+        },
       });
 
       if (!existingDocument) {
         throw new BadRequestException('Document not found or access denied');
       }
 
-      const updateData: any = {};
-      if (title !== undefined) updateData.title = title;
-      if (description !== undefined) updateData.description = description;
+      return await this.prisma.$transaction(async (tx) => {
+        const documentUpdateData: any = {};
+        if (title !== undefined) documentUpdateData.title = title;
+        if (description !== undefined)
+          documentUpdateData.description = description;
 
-      if (Object.keys(updateData).length === 0) {
-        throw new BadRequestException('No valid fields to update');
-      }
+        if (Object.keys(documentUpdateData).length > 0) {
+          await tx.documents.update({
+            where: { id: documentId },
+            data: documentUpdateData,
+          });
+        }
 
-      return await this.prisma.documents.update({
-        where: { id: documentId },
-        data: updateData,
-        include: {
-          steps: {
+        if (deleteStepIds && deleteStepIds.length > 0) {
+          const stepsToDelete = await tx.steps.findMany({
+            where: {
+              id: { in: deleteStepIds },
+              documentId,
+            },
             include: {
               screenshot: true,
             },
-            orderBy: {
-              stepNumber: 'asc',
+          });
+
+          for (const step of stepsToDelete) {
+            if (step.screenshot) {
+              try {
+                await this.googleDriveService.deleteImageFromDrive(
+                  step.screenshot.googleImageId,
+                  userId,
+                );
+              } catch (error) {
+                console.error(
+                  `Failed to delete screenshot from Google Drive: ${error}`,
+                );
+              }
+            }
+          }
+
+          await tx.screenshots.deleteMany({
+            where: {
+              step: {
+                id: { in: deleteStepIds },
+                documentId,
+              },
+            },
+          });
+
+          await tx.steps.deleteMany({
+            where: {
+              id: { in: deleteStepIds },
+              documentId,
+            },
+          });
+        }
+
+        if (steps && steps.length > 0) {
+          for (const step of steps) {
+            if (step.id) {
+              const existingStep = await tx.steps.findFirst({
+                where: {
+                  id: step.id,
+                  documentId,
+                },
+                include: {
+                  screenshot: true,
+                },
+              });
+
+              if (!existingStep) {
+                throw new BadRequestException(
+                  `Step with ID ${step.id} not found`,
+                );
+              }
+
+              await tx.steps.update({
+                where: { id: step.id },
+                data: {
+                  stepDescription: step.stepDescription,
+                  stepNumber: step.stepNumber,
+                  type: step.type,
+                },
+              });
+
+              if (step.screenshot) {
+                if (existingStep.screenshot) {
+                  if (
+                    existingStep.screenshot.googleImageId !==
+                    step.screenshot.googleImageId
+                  ) {
+                    try {
+                      await this.googleDriveService.deleteImageFromDrive(
+                        existingStep.screenshot.googleImageId,
+                        userId,
+                      );
+                    } catch (error) {
+                      console.error(
+                        `Failed to delete old screenshot from Google Drive: ${error}`,
+                      );
+                    }
+                  }
+
+                  await tx.screenshots.update({
+                    where: { stepId: step.id },
+                    data: {
+                      googleImageId: step.screenshot.googleImageId,
+                      url: step.screenshot.url,
+                      viewportX: step.screenshot.viewportX,
+                      viewportY: step.screenshot.viewportY,
+                      viewportWidth: step.screenshot.viewportWidth,
+                      viewportHeight: step.screenshot.viewportHeight,
+                      devicePixelRatio: step.screenshot.devicePixelRatio,
+                    },
+                  });
+                } else {
+                  await tx.screenshots.create({
+                    data: {
+                      stepId: step.id,
+                      googleImageId: step.screenshot.googleImageId,
+                      url: step.screenshot.url,
+                      viewportX: step.screenshot.viewportX,
+                      viewportY: step.screenshot.viewportY,
+                      viewportWidth: step.screenshot.viewportWidth,
+                      viewportHeight: step.screenshot.viewportHeight,
+                      devicePixelRatio: step.screenshot.devicePixelRatio,
+                    },
+                  });
+                }
+              } else if (existingStep.screenshot) {
+                try {
+                  await this.googleDriveService.deleteImageFromDrive(
+                    existingStep.screenshot.googleImageId,
+                    userId,
+                  );
+                } catch (error) {
+                  console.error(
+                    `Failed to delete screenshot from Google Drive: ${error}`,
+                  );
+                }
+
+                await tx.screenshots.delete({
+                  where: { stepId: step.id },
+                });
+              }
+            } else {
+              const newStep = await tx.steps.create({
+                data: {
+                  documentId,
+                  stepDescription: step.stepDescription,
+                  stepNumber: step.stepNumber,
+                  type: step.type,
+                },
+              });
+
+              // Add screenshot if provided
+              if (step.screenshot) {
+                await tx.screenshots.create({
+                  data: {
+                    stepId: newStep.id,
+                    googleImageId: step.screenshot.googleImageId,
+                    url: step.screenshot.url,
+                    viewportX: step.screenshot.viewportX,
+                    viewportY: step.screenshot.viewportY,
+                    viewportWidth: step.screenshot.viewportWidth,
+                    viewportHeight: step.screenshot.viewportHeight,
+                    devicePixelRatio: step.screenshot.devicePixelRatio,
+                  },
+                });
+              }
+            }
+          }
+        }
+
+        return await tx.documents.findFirst({
+          where: { id: documentId },
+          include: {
+            steps: {
+              include: {
+                screenshot: true,
+              },
+              orderBy: {
+                stepNumber: 'asc',
+              },
+            },
+            user: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
             },
           },
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-        },
+        });
       });
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
       }
       throw new BadRequestException(
-        `Failed to update document: ${error.message}`,
+        `Failed to update document with steps: ${error.message}`,
       );
     }
   }
@@ -244,10 +418,6 @@ export class DocumentService {
         .filter((step) => step.screenshot)
         .map((step) => step.screenshot!);
 
-      console.log(
-        `Found ${screenshotsToDelete.length} screenshots to delete from Google Drive`,
-      );
-
       // Delete screenshots from Google Drive in parallel
       const deletePromises = screenshotsToDelete.map((screenshot) =>
         this.googleDriveService.deleteImageFromDrive(
@@ -258,7 +428,6 @@ export class DocumentService {
 
       try {
         await Promise.allSettled(deletePromises);
-        console.log('Completed deleting screenshots from Google Drive');
       } catch (error) {
         console.error(
           'Some screenshots failed to delete from Google Drive:',
