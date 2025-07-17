@@ -5,8 +5,8 @@ import {
   ValidateNested,
   IsEnum,
   IsNumber,
-} from '@nestjs/class-validator';
-import { Type } from '@nestjs/class-transformer';
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { StepType } from '../../../generated/prisma/index';
 import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 

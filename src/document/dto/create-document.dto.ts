@@ -6,8 +6,8 @@ import {
   ValidateNested,
   ArrayMinSize,
   ArrayMaxSize,
-} from '@nestjs/class-validator';
-import { Type } from '@nestjs/class-transformer';
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { CreateStepDto } from 'src/step/dto/create-step.dto';
 
 export class CreateDocumentDto {
