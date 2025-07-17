@@ -183,7 +183,7 @@ export class DocumentService {
             },
           });
 
-          for (const step of stepsToDelete) {
+          const deletePromises = stepsToDelete.map(async (step) => {
             if (step.screenshot) {
               try {
                 await this.googleDriveService.deleteImageFromDrive(
@@ -196,7 +196,10 @@ export class DocumentService {
                 );
               }
             }
-          }
+            return Promise.resolve();
+          });
+
+          await Promise.all(deletePromises);
 
           await tx.screenshots.deleteMany({
             where: {
