@@ -9,6 +9,7 @@ import { RefreshAuth } from './decorators/refresh-auth.decorator';
 import { Users } from '../../generated/prisma';
 import { ApiExtraModels, ApiTags } from '@nestjs/swagger';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
+import { time } from 'console';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -44,7 +45,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 1000 * 60 * 15,
+      maxAge: 1000 * 60 * 60,
     });
     res.cookie('refresh_token', tokens.refreshToken, {
       httpOnly: true,
@@ -89,16 +90,16 @@ export class AuthController {
   ) {
     const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken;
     if (!refreshToken) {
+      console.log('No refresh token found');
       return { message: 'No refresh token found' };
     }
     try {
       const tokens = await this.authService.refreshTokens(refreshToken);
-
       res.cookie('access_token', tokens.accessToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
-        maxAge: 1000 * 60 * 15,
+        maxAge: 1000 * 60 * 60,
       });
       res.cookie('refresh_token', tokens.refreshToken, {
         httpOnly: true,
