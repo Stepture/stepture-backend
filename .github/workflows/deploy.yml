@@ -62,27 +62,27 @@ jobs:
 
       - name: Start services on Azure VM
         uses: appleboy/ssh-action@v1.0.3
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          JWT_EXPIRATION_TIME: ${{ secrets.JWT_EXPIRATION_TIME }}
-          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
-          REFRESH_JWT_EXPIRATION_TIME: ${{ secrets.REFRESH_JWT_EXPIRATION_TIME }}
-          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
-          FRONTENDURL: ${{ secrets.FRONTENDURL }}
-          GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
-          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
-          CORS_CHROME_EXTENSION_ORIGIN: ${{ secrets.CORS_CHROME_EXTENSION_ORIGIN }}
-          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          BACKEND_TAG: ${{ github.sha }}
         with:
           host: ${{ secrets.AZURE_VM_HOST }}
           username: ${{ secrets.AZURE_VM_USERNAME }}
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
           script: |
             cd ~/stepture-deployment
+
+            export DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            export JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            export JWT_EXPIRATION_TIME="${{ secrets.JWT_EXPIRATION_TIME }}"
+            export JWT_REFRESH_SECRET="${{ secrets.JWT_REFRESH_SECRET }}"
+            export REFRESH_JWT_EXPIRATION_TIME="${{ secrets.REFRESH_JWT_EXPIRATION_TIME }}"
+            export GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"
+            export GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"
+            export FRONTENDURL="${{ secrets.FRONTENDURL }}"
+            export GOOGLE_CALLBACK_URL="${{ secrets.GOOGLE_CALLBACK_URL }}"
+            export CORS_ORIGIN="${{ secrets.CORS_ORIGIN }}"
+            export CORS_CHROME_EXTENSION_ORIGIN="${{ secrets.CORS_CHROME_EXTENSION_ORIGIN }}"
+            export ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
+            export DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
+            export BACKEND_TAG="${{ github.sha }}"
 
             docker-compose -f docker-compose.prod.yml pull backend
             docker-compose -f docker-compose.prod.yml up -d --build
