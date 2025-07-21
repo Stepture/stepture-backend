@@ -7,9 +7,54 @@
         "parameters": [],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Returns API welcome message"
           }
         },
+        "summary": "Get API information",
+        "tags": [
+          "App"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "AppController_getHealth",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns application health status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "ok"
+                    },
+                    "timestamp": {
+                      "type": "string",
+                      "example": "2025-07-20T10:30:00Z"
+                    },
+                    "uptime": {
+                      "type": "number",
+                      "example": 12345.67
+                    },
+                    "environment": {
+                      "type": "string",
+                      "example": "production"
+                    },
+                    "version": {
+                      "type": "string",
+                      "example": "1.0.0"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary": "Health check endpoint",
         "tags": [
           "App"
         ]
