@@ -1,0 +1,104 @@
+name: Deploy to Azure VM
+
+on:
+  push:
+    branches: [main]
+
+env:
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+  BACKEND_TAG: ${{ github.sha }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/stepture-backend:latest
+            ${{ secrets.DOCKER_USERNAME }}/stepture-backend:${{ github.sha }}
+
+      - name: Deploy to Azure VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USERNAME }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            # Create deployment directory
+            mkdir -p ~/stepture-deployment
+            cd ~/stepture-deployment
+
+            # Stop existing containers
+            docker-compose down || true
+
+            # Remove old images
+            docker image prune -f
+
+      - name: Copy files to Azure VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USERNAME }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          source: 'docker-compose.prod.yml,nginx/'
+          target: '~/stepture-deployment/'
+
+      - name: Start services on Azure VM
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRATION_TIME: ${{ secrets.JWT_EXPIRATION_TIME }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          REFRESH_JWT_EXPIRATION_TIME: ${{ secrets.REFRESH_JWT_EXPIRATION_TIME }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          FRONTENDURL: ${{ secrets.FRONTENDURL }}
+          GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          CORS_CHROME_EXTENSION_ORIGIN: ${{ secrets.CORS_CHROME_EXTENSION_ORIGIN }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          BACKEND_TAG: ${{ github.sha }}
+        with:
+          host: ${{ secrets.AZURE_VM_HOST }}
+          username: ${{ secrets.AZURE_VM_USERNAME }}
+          key: ${{ secrets.AZURE_VM_SSH_KEY }}
+          script: |
+            cd ~/stepture-deployment
+            export DATABASE_URL="$DATABASE_URL"
+            export JWT_SECRET="$JWT_SECRET"
+            export JWT_EXPIRATION_TIME="$JWT_EXPIRATION_TIME"
+            export JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET"
+            export REFRESH_JWT_EXPIRATION_TIME="$REFRESH_JWT_EXPIRATION_TIME"
+            export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
+            export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
+            export FRONTENDURL="$FRONTENDURL"
+            export GOOGLE_CALLBACK_URL="$GOOGLE_CALLBACK_URL"
+            export CORS_ORIGIN="$CORS_ORIGIN"
+            export CORS_CHROME_EXTENSION_ORIGIN="$CORS_CHROME_EXTENSION_ORIGIN"
+            export ENCRYPTION_KEY="$ENCRYPTION_KEY"
+            export DOCKER_USERNAME="$DOCKER_USERNAME"
+            export BACKEND_TAG="$BACKEND_TAG"
+
+            docker-compose -f docker-compose.prod.yml pull backend
+            docker-compose -f docker-compose.prod.yml up -d --build
+
+            docker-compose -f docker-compose.prod.yml ps
