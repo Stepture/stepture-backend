@@ -21,5 +21,9 @@ services:
     build: ./nginx
     ports:
       - '80:80'
+      - '443:443'
+    volumes:
+      - /etc/letsencrypt/live/stepture-backend.eastus.cloudapp.azure.com:/etc/letsencrypt/live/stepture-backend.eastus.cloudapp.azure.com:ro
+      - /etc/letsencrypt/archive/stepture-backend.eastus.cloudapp.azure.com:/etc/letsencrypt/archive/stepture-backend.eastus.cloudapp.azure.com:ro
     depends_on:
       - backend
