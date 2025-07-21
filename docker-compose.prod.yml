@@ -1,0 +1,25 @@
+services:
+  backend:
+    image: ${DOCKER_USERNAME}/stepture-backend:${BACKEND_TAG:-latest}
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRATION_TIME=${JWT_EXPIRATION_TIME}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - REFRESH_JWT_EXPIRATION_TIME=${REFRESH_JWT_EXPIRATION_TIME}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - FRONTENDURL=${FRONTENDURL}
+      - GOOGLE_CALLBACK_URL=${GOOGLE_CALLBACK_URL}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - CORS_CHROME_EXTENSION_ORIGIN=${CORS_CHROME_EXTENSION_ORIGIN}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - PORT=8000
+      - NODE_ENV=production
+
+  nginx:
+    build: ./nginx
+    ports:
+      - '80:80'
+    depends_on:
+      - backend

@@ -1,0 +1,23 @@
+# Add to .dockerignore
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore
+.github
+README.md
+.env
+.env.example
+.env.local
+.env.development
+.env.test
+.nyc_output
+coverage
+.coverage
+test
+tests
+**/*.test.js
+**/*.test.ts
+**/*.spec.js
+**/*.spec.ts
