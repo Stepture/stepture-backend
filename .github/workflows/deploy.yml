@@ -83,20 +83,6 @@ jobs:
           key: ${{ secrets.AZURE_VM_SSH_KEY }}
           script: |
             cd ~/stepture-deployment
-            export DATABASE_URL="$DATABASE_URL"
-            export JWT_SECRET="$JWT_SECRET"
-            export JWT_EXPIRATION_TIME="$JWT_EXPIRATION_TIME"
-            export JWT_REFRESH_SECRET="$JWT_REFRESH_SECRET"
-            export REFRESH_JWT_EXPIRATION_TIME="$REFRESH_JWT_EXPIRATION_TIME"
-            export GOOGLE_CLIENT_ID="$GOOGLE_CLIENT_ID"
-            export GOOGLE_CLIENT_SECRET="$GOOGLE_CLIENT_SECRET"
-            export FRONTENDURL="$FRONTENDURL"
-            export GOOGLE_CALLBACK_URL="$GOOGLE_CALLBACK_URL"
-            export CORS_ORIGIN="$CORS_ORIGIN"
-            export CORS_CHROME_EXTENSION_ORIGIN="$CORS_CHROME_EXTENSION_ORIGIN"
-            export ENCRYPTION_KEY="$ENCRYPTION_KEY"
-            export DOCKER_USERNAME="$DOCKER_USERNAME"
-            export BACKEND_TAG="$BACKEND_TAG"
 
             docker-compose -f docker-compose.prod.yml pull backend
             docker-compose -f docker-compose.prod.yml up -d --build
