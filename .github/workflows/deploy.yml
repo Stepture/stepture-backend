@@ -81,8 +81,10 @@ jobs:
             export CORS_ORIGIN="${{ secrets.CORS_ORIGIN }}"
             export CORS_CHROME_EXTENSION_ORIGIN="${{ secrets.CORS_CHROME_EXTENSION_ORIGIN }}"
             export ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}"
+            export GOOGLE_AUTH_SUCCESS_REDIRECT="${{ secrets.FRONTENDURL }}/auth/success"
             export DOCKER_USERNAME="${{ secrets.DOCKER_USERNAME }}"
             export BACKEND_TAG="${{ github.sha }}"
+            export NODE_ENV=production
 
             docker-compose -f docker-compose.prod.yml pull backend
             docker-compose -f docker-compose.prod.yml up -d --build
