@@ -130,6 +130,34 @@
         ]
       }
     },
+    "/auth/debug/cookies": {
+      "get": {
+        "operationId": "AuthController_debugCookies",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/debug/env": {
+      "get": {
+        "operationId": "AuthController_debugEnv",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/google-drive/upload-image": {
       "post": {
         "operationId": "GoogleDriveController_uploadImageToDrive",

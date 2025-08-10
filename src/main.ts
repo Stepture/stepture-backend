@@ -13,7 +13,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
       process.env.CORS_ORIGIN || 'http://localhost:3000',
-      process.env.CORS_CHROME_EXTENSION ||
+      process.env.CORS_CHROME_EXTENSION_ORIGIN ||
         'chrome-extension://nmmhkkegccagdldgiimedpiccmgmieda',
     ],
     credentials: true,

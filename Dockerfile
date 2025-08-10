@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -11,10 +11,9 @@ RUN npx prisma generate && \
     npm run build && \
     npm prune --production
 
-FROM node:22-alpine AS production
+FROM node:24-alpine AS runner
 
-RUN apk add --no-cache dumb-init && \
-    addgroup -g 1001 -S nodejs && \
+RUN addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
 WORKDIR /app

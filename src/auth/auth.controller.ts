@@ -41,16 +41,19 @@ export class AuthController {
       user.name ?? '',
     );
     // Set HttpOnly cookies for access and refresh tokens
+    console.log(process.env.NODE_ENV);
     res.cookie('access_token', tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
       maxAge: 1000 * 60 * 60,
     });
     res.cookie('refresh_token', tokens.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      path: '/',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
     res.redirect(
@@ -99,12 +102,14 @@ export class AuthController {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        path: '/',
         maxAge: 1000 * 60 * 60,
       });
       res.cookie('refresh_token', tokens.refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        path: '/',
         maxAge: 1000 * 60 * 60 * 24 * 7,
       });
       return { ...tokens, message: 'Tokens refreshed' };
@@ -122,6 +127,40 @@ export class AuthController {
       user: req.user,
       message: 'User profile retrieved successfully',
       isLoggedIn: true,
+    };
+  }
+
+  @Public()
+  @Get('debug/cookies')
+  async debugCookies(
+    @Request() req: import('express').Request & { cookies: Record<string, string> },
+  ) {
+    return {
+      cookies: req.cookies,
+      headers: {
+        cookie: req.headers.cookie,
+        origin: req.headers.origin,
+        referer: req.headers.referer,
+        'user-agent': req.headers['user-agent'],
+      },
+      environment: {
+        NODE_ENV: process.env.NODE_ENV,
+        CORS_ORIGIN: process.env.CORS_ORIGIN,
+        FRONTENDURL: process.env.FRONTENDURL,
+      },
+    };
+  }
+
+  @Public()
+  @Get('debug/env')
+  async debugEnv() {
+    return {
+      NODE_ENV: process.env.NODE_ENV,
+      CORS_ORIGIN: process.env.CORS_ORIGIN,
+      CORS_CHROME_EXTENSION_ORIGIN: process.env.CORS_CHROME_EXTENSION_ORIGIN,
+      FRONTENDURL: process.env.FRONTENDURL,
+      GOOGLE_CALLBACK_URL: process.env.GOOGLE_CALLBACK_URL,
+      PORT: process.env.PORT,
     };
   }
 }
