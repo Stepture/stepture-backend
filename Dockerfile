@@ -13,7 +13,8 @@ RUN npx prisma generate && \
 
 FROM node:24-alpine AS runner
 
-RUN addgroup -g 1001 -S nodejs && \
+RUN apk add --no-cache dumb-init && \ 
+    addgroup -g 1001 -S nodejs && \
     adduser -S nestjs -u 1001
 
 WORKDIR /app
