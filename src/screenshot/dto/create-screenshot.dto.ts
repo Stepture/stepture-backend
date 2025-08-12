@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNumber, IsUrl } from 'class-validator';
-import { google } from 'googleapis';
 
 export class CreateScreenshotDto {
   @ApiProperty({
