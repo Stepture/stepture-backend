@@ -157,13 +157,8 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    // Check if token is expired or will expire soon (within 5 minutes) and refresh if needed
     const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
     if (user.expiresAt && user.expiresAt < fiveMinutesFromNow) {
-      console.log(
-        `Access token expired or expiring soon for user ${id}, attempting to refresh...`,
-      );
-
       const decryptedRefreshToken = user.refreshToken
         ? decryptRefreshToken(user.refreshToken)
         : null;
@@ -175,12 +170,10 @@ export class UsersService {
       }
 
       try {
-        // Refresh the access token
         const { accessToken, expiresAt } = await this.refreshAccessToken(
           decryptedRefreshToken,
         );
 
-        // Update user with new access token
         user = await this.prisma.users.update({
           where: { id },
           data: {
@@ -194,8 +187,6 @@ export class UsersService {
             googleDriveRootId: true,
           },
         });
-
-        console.log(`Successfully refreshed access token for user ${id}`);
       } catch (error) {
         console.error('Failed to refresh access token:', error);
         throw new Error(
