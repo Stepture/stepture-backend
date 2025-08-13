@@ -5,13 +5,41 @@ import {
   decryptRefreshToken,
   encryptRefreshToken,
 } from '../common/utils/crypto.utils';
-import { google } from 'googleapis';
+import { drive } from '@googleapis/drive';
+import { OAuth2Client } from 'google-auth-library';
 import { access } from 'fs';
 import { GoogleDriveService } from '../google-drive/google-drive.service';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
+
+  private async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<{ accessToken: string; expiresAt: Date }> {
+    const oauth2Client = new OAuth2Client(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+    );
+    oauth2Client.setCredentials({
+      refresh_token: refreshToken,
+    });
+
+    const { credentials } = await oauth2Client.refreshAccessToken();
+
+    if (!credentials.access_token) {
+      throw new Error('Failed to obtain new access token');
+    }
+
+    const expiresAt = credentials.expiry_date
+      ? new Date(credentials.expiry_date)
+      : new Date(Date.now() + 3600 * 1000); // Default to 1 hour
+
+    return {
+      accessToken: credentials.access_token,
+      expiresAt,
+    };
+  }
 
   async findOrCreateGoogleUser({
     email,
@@ -46,20 +74,20 @@ export class UsersService {
       });
 
       try {
-        const oauth2Client = new google.auth.OAuth2();
+        const oauth2Client = new OAuth2Client();
         oauth2Client.setCredentials({
           access_token: accessToken,
           refresh_token: refreshToken,
           expiry_date: expiresAt?.getTime() || expiredAt.getTime(),
         });
 
-        const drive = google.drive({
+        const driveClient = drive({
           version: 'v3',
           auth: oauth2Client,
         });
 
         const folderName = `Stepture - ${user.name}`;
-        const res = await drive.files.list({
+        const res = await driveClient.files.list({
           q: `mimeType='application/vnd.google-apps.folder' and name='${folderName}' and trashed=false`,
           fields: 'files(id, name)',
         });
@@ -67,7 +95,7 @@ export class UsersService {
         let folderId: string | null = null;
 
         if (!res.data.files || res.data.files.length === 0) {
-          const folder = await drive.files.create({
+          const folder = await driveClient.files.create({
             requestBody: {
               name: folderName,
               mimeType: 'application/vnd.google-apps.folder',
@@ -115,7 +143,7 @@ export class UsersService {
   }
 
   async getAccessTokenAndGoogleDriveRootId(id: string) {
-    const user = await this.prisma.users.findUnique({
+    let user = await this.prisma.users.findUnique({
       where: { id },
       select: {
         accessToken: true,
@@ -129,9 +157,44 @@ export class UsersService {
       throw new Error('User not found');
     }
 
-    if (user.expiresAt && user.expiresAt < new Date()) {
-      throw new Error('Access token has expired');
+    const fiveMinutesFromNow = new Date(Date.now() + 5 * 60 * 1000);
+    if (user.expiresAt && user.expiresAt < fiveMinutesFromNow) {
+      const decryptedRefreshToken = user.refreshToken
+        ? decryptRefreshToken(user.refreshToken)
+        : null;
+
+      if (!decryptedRefreshToken) {
+        throw new Error(
+          'Access token has expired and no refresh token available',
+        );
+      }
+
+      try {
+        const { accessToken, expiresAt } = await this.refreshAccessToken(
+          decryptedRefreshToken,
+        );
+
+        user = await this.prisma.users.update({
+          where: { id },
+          data: {
+            accessToken,
+            expiresAt,
+          },
+          select: {
+            accessToken: true,
+            refreshToken: true,
+            expiresAt: true,
+            googleDriveRootId: true,
+          },
+        });
+      } catch (error) {
+        console.error('Failed to refresh access token:', error);
+        throw new Error(
+          'Failed to refresh access token. Please re-authenticate.',
+        );
+      }
     }
+
     const decryptedRefreshToken = user.refreshToken
       ? decryptRefreshToken(user.refreshToken)
       : null;

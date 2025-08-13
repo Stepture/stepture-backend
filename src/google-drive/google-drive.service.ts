@@ -1,4 +1,5 @@
-import { google } from 'googleapis';
+import { drive } from '@googleapis/drive';
+import { OAuth2Client } from 'google-auth-library';
 import { Injectable } from '@nestjs/common';
 import { Request } from 'express';
 import { Readable } from 'stream';
@@ -16,16 +17,16 @@ export class GoogleDriveService {
 
     const { accessToken, googleDriveRootId, refreshToken } =
       await this.userService.getAccessTokenAndGoogleDriveRootId(user.userId);
-    const oauth2Client = new google.auth.OAuth2();
+    const oauth2Client = new OAuth2Client();
     oauth2Client.setCredentials({
       access_token: accessToken,
       refresh_token: refreshToken,
     });
-    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    const driveClient = drive({ version: 'v3', auth: oauth2Client });
     const { originalname, buffer, mimetype } = file;
 
     const folderId = googleDriveRootId || 'root';
-    const uploadRes = await drive.files.create({
+    const uploadRes = await driveClient.files.create({
       requestBody: {
         name: originalname,
         mimeType: mimetype,
@@ -43,7 +44,7 @@ export class GoogleDriveService {
       throw new Error('Failed to retrieve file ID after upload');
     }
 
-    await drive.permissions.create({
+    await driveClient.permissions.create({
       fileId,
       requestBody: {
         role: 'reader',
@@ -51,7 +52,7 @@ export class GoogleDriveService {
       },
     });
 
-    const fileRes = await drive.files.get({
+    const fileRes = await driveClient.files.get({
       fileId,
       fields: 'id, name, webViewLink',
     });
@@ -73,15 +74,15 @@ export class GoogleDriveService {
       const { accessToken, refreshToken } =
         await this.userService.getAccessTokenAndGoogleDriveRootId(userId);
 
-      const oauth2Client = new google.auth.OAuth2();
+      const oauth2Client = new OAuth2Client();
       oauth2Client.setCredentials({
         access_token: accessToken,
         refresh_token: refreshToken,
       });
 
-      const drive = google.drive({ version: 'v3', auth: oauth2Client });
+      const driveClient = drive({ version: 'v3', auth: oauth2Client });
 
-      await drive.files.delete({
+      await driveClient.files.delete({
         fileId: googleImageId,
       });
     } catch (error) {

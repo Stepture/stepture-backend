@@ -16,7 +16,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy) {
       clientID: googleConfiguration.clientID,
       clientSecret: googleConfiguration.clientSecret,
       callbackURL: googleConfiguration.callBackURL,
-      scope: ['email', 'profile', 'https://www.googleapis.com/auth/drive'],
+      scope: ['email', 'profile', 'https://www.googleapis.com/auth/drive.file'],
       passReqToCallback: true,
     });
   }
