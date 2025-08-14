@@ -6,14 +6,9 @@ import { existsSync, mkdirSync, writeFileSync } from 'fs';
 import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    bodyParser: false,
-  });
+  const app = await NestFactory.create(AppModule);
 
   app.use(cookieParser());
-
-  app.use(require('express').json({ limit: '50mb' }));
-  app.use(require('express').urlencoded({ limit: '50mb', extended: true }));
 
   app.enableCors({
     origin: [
