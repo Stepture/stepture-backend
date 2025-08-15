@@ -19,53 +19,58 @@ export class DocumentService {
     const { title, description, steps } = createDocumentDto;
 
     try {
-      return await this.prisma.$transaction(async (tx) => {
-        const document = await tx.documents.create({
-          data: {
-            title,
-            description,
-            userId,
-            steps: {
-              create: steps.map((step, index) => ({
-                stepDescription: step.stepDescription,
-                stepNumber: Number(step.stepNumber),
-                type: step.type,
-                screenshot: step.screenshot
-                  ? {
-                      create: {
-                        googleImageId: step.screenshot.googleImageId,
-                        url: step.screenshot.url,
-                        viewportX: step.screenshot.viewportX,
-                        viewportY: step.screenshot.viewportY,
-                        viewportWidth: step.screenshot.viewportWidth,
-                        viewportHeight: step.screenshot.viewportHeight,
-                        devicePixelRatio: step.screenshot.devicePixelRatio,
-                      },
-                    }
-                  : undefined,
-              })),
-            },
-          },
-          include: {
-            steps: {
-              include: {
-                screenshot: true,
-              },
-              orderBy: {
-                stepNumber: 'asc',
+      return await this.prisma.$transaction(
+        async (tx) => {
+          const document = await tx.documents.create({
+            data: {
+              title,
+              description,
+              userId,
+              steps: {
+                create: steps.map((step, index) => ({
+                  stepDescription: step.stepDescription,
+                  stepNumber: Number(step.stepNumber),
+                  type: step.type,
+                  screenshot: step.screenshot
+                    ? {
+                        create: {
+                          googleImageId: step.screenshot.googleImageId,
+                          url: step.screenshot.url,
+                          viewportX: step.screenshot.viewportX,
+                          viewportY: step.screenshot.viewportY,
+                          viewportWidth: step.screenshot.viewportWidth,
+                          viewportHeight: step.screenshot.viewportHeight,
+                          devicePixelRatio: step.screenshot.devicePixelRatio,
+                        },
+                      }
+                    : undefined,
+                })),
               },
             },
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
+            include: {
+              steps: {
+                include: {
+                  screenshot: true,
+                },
+                orderBy: {
+                  stepNumber: 'asc',
+                },
+              },
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
               },
             },
-          },
-        });
-        return document;
-      });
+          });
+          return document;
+        },
+        {
+          timeout: 50000,
+        },
+      );
     } catch (error) {
       throw new BadRequestException(
         `Failed to create document: ${error.message}`,
