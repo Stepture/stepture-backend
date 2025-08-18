@@ -164,203 +164,210 @@ export class DocumentService {
         throw new BadRequestException('Document not found or access denied');
       }
 
-      return await this.prisma.$transaction(async (tx) => {
-        const documentUpdateData: any = {};
-        if (title !== undefined) documentUpdateData.title = title;
-        if (description !== undefined)
-          documentUpdateData.description = description;
+      // Collect images to delete
+      const imagesToDelete: string[] = [];
 
-        if (Object.keys(documentUpdateData).length > 0) {
-          await tx.documents.update({
-            where: { id: documentId },
-            data: documentUpdateData,
-          });
-        }
+      // Images from steps being deleted
+      if (deleteStepIds && deleteStepIds.length > 0) {
+        const stepsToDelete = existingDocument.steps.filter((step) =>
+          deleteStepIds.includes(step.id),
+        );
 
-        if (deleteStepIds && deleteStepIds.length > 0) {
-          const stepsToDelete = await tx.steps.findMany({
-            where: {
-              id: { in: deleteStepIds },
-              documentId,
-            },
-            include: {
-              screenshot: true,
-            },
-          });
+        stepsToDelete.forEach((step) => {
+          if (step.screenshot) {
+            imagesToDelete.push(step.screenshot.googleImageId);
+          }
+        });
+      }
 
-          const deletePromises = stepsToDelete.map(async (step) => {
-            if (step.screenshot) {
-              try {
-                await this.googleDriveService.deleteImageFromDrive(
-                  step.screenshot.googleImageId,
-                  userId,
-                );
-              } catch (error) {
-                console.error(
-                  `Failed to delete screenshot from Google Drive: ${error}`,
-                );
-              }
+      // Images from steps being updated with new screenshots
+      if (steps && steps.length > 0) {
+        // Map (JS) Similar to Python's dict
+        const existingStepsMap = new Map(
+          existingDocument.steps.map((step) => [step.id, step]),
+        );
+
+        steps.forEach((step) => {
+          // If step has an ID and a screenshot, check if it needs to be deleted
+          if (step.id && step.screenshot) {
+            const existingStep = existingStepsMap.get(step.id);
+            // If existing step has a screenshot and it's different, mark for deletion
+            if (
+              existingStep?.screenshot &&
+              existingStep.screenshot.googleImageId !==
+                step.screenshot.googleImageId
+            ) {
+              imagesToDelete.push(existingStep.screenshot.googleImageId);
             }
-            return Promise.resolve();
-          });
+          }
+          // If step has an ID and no screenshot, check if it needs to be deleted
+          else if (step.id && !step.screenshot) {
+            // Step is removing its screenshot
+            const existingStep = existingStepsMap.get(step.id);
+            if (existingStep?.screenshot) {
+              imagesToDelete.push(existingStep.screenshot.googleImageId);
+            }
+          }
+        });
+      }
 
-          await Promise.all(deletePromises);
+      const updatedDocument = await this.prisma.$transaction(
+        async (tx) => {
+          // Update document metadata
+          const documentUpdateData: any = {};
+          if (title !== undefined) documentUpdateData.title = title;
+          if (description !== undefined)
+            documentUpdateData.description = description;
 
-          await tx.screenshots.deleteMany({
-            where: {
-              step: {
+          if (Object.keys(documentUpdateData).length > 0) {
+            await tx.documents.update({
+              where: { id: documentId },
+              data: documentUpdateData,
+            });
+          }
+
+          // Delete steps and their screenshots from database
+          if (deleteStepIds && deleteStepIds.length > 0) {
+            await tx.screenshots.deleteMany({
+              where: {
+                step: {
+                  id: { in: deleteStepIds },
+                  documentId,
+                },
+              },
+            });
+
+            await tx.steps.deleteMany({
+              where: {
                 id: { in: deleteStepIds },
                 documentId,
               },
-            },
-          });
+            });
+          }
 
-          await tx.steps.deleteMany({
-            where: {
-              id: { in: deleteStepIds },
-              documentId,
-            },
-          });
-        }
-
-        if (steps && steps.length > 0) {
-          for (const step of steps) {
-            if (step.id) {
-              const existingStep = await tx.steps.findFirst({
-                where: {
-                  id: step.id,
-                  documentId,
-                },
-                include: {
-                  screenshot: true,
-                },
-              });
-
-              if (!existingStep) {
-                throw new BadRequestException(
-                  `Step with ID ${step.id} not found`,
-                );
-              }
-
-              await tx.steps.update({
-                where: { id: step.id },
-                data: {
-                  stepDescription: step.stepDescription,
-                  stepNumber: step.stepNumber,
-                  type: step.type,
-                },
-              });
-
-              if (step.screenshot) {
-                if (existingStep.screenshot) {
-                  if (
-                    existingStep.screenshot.googleImageId !==
-                    step.screenshot.googleImageId
-                  ) {
-                    try {
-                      await this.googleDriveService.deleteImageFromDrive(
-                        existingStep.screenshot.googleImageId,
-                        userId,
-                      );
-                    } catch (error) {
-                      console.error(
-                        `Failed to delete old screenshot from Google Drive: ${error}`,
-                      );
-                    }
-                  }
-
-                  await tx.screenshots.update({
-                    where: { stepId: step.id },
-                    data: {
-                      googleImageId: step.screenshot.googleImageId,
-                      url: step.screenshot.url,
-                      viewportX: step.screenshot.viewportX,
-                      viewportY: step.screenshot.viewportY,
-                      viewportWidth: step.screenshot.viewportWidth,
-                      viewportHeight: step.screenshot.viewportHeight,
-                      devicePixelRatio: step.screenshot.devicePixelRatio,
-                    },
-                  });
-                } else {
-                  await tx.screenshots.create({
-                    data: {
-                      stepId: step.id,
-                      googleImageId: step.screenshot.googleImageId,
-                      url: step.screenshot.url,
-                      viewportX: step.screenshot.viewportX,
-                      viewportY: step.screenshot.viewportY,
-                      viewportWidth: step.screenshot.viewportWidth,
-                      viewportHeight: step.screenshot.viewportHeight,
-                      devicePixelRatio: step.screenshot.devicePixelRatio,
-                    },
-                  });
-                }
-              } else if (existingStep.screenshot) {
-                try {
-                  await this.googleDriveService.deleteImageFromDrive(
-                    existingStep.screenshot.googleImageId,
-                    userId,
-                  );
-                } catch (error) {
-                  console.error(
-                    `Failed to delete screenshot from Google Drive: ${error}`,
-                  );
-                }
-
-                await tx.screenshots.delete({
-                  where: { stepId: step.id },
-                });
-              }
-            } else {
-              const newStep = await tx.steps.create({
-                data: {
-                  documentId,
-                  stepDescription: step.stepDescription,
-                  stepNumber: step.stepNumber,
-                  type: step.type,
-                },
-              });
-
-              // Add screenshot if provided
-              if (step.screenshot) {
-                await tx.screenshots.create({
+          // Process step updates and creates
+          if (steps && steps.length > 0) {
+            for (const step of steps) {
+              if (step.id) {
+                // Update existing step
+                await tx.steps.update({
+                  where: { id: step.id },
                   data: {
-                    stepId: newStep.id,
-                    googleImageId: step.screenshot.googleImageId,
-                    url: step.screenshot.url,
-                    viewportX: step.screenshot.viewportX,
-                    viewportY: step.screenshot.viewportY,
-                    viewportWidth: step.screenshot.viewportWidth,
-                    viewportHeight: step.screenshot.viewportHeight,
-                    devicePixelRatio: step.screenshot.devicePixelRatio,
+                    stepDescription: step.stepDescription,
+                    stepNumber: step.stepNumber,
+                    type: step.type,
                   },
                 });
+
+                // Handle screenshot updates
+                if (step.screenshot) {
+                  const existingStep = existingDocument.steps.find(
+                    (s) => s.id === step.id,
+                  );
+
+                  if (existingStep?.screenshot) {
+                    // Update existing screenshot
+                    await tx.screenshots.update({
+                      where: { stepId: step.id },
+                      data: {
+                        googleImageId: step.screenshot.googleImageId,
+                        url: step.screenshot.url,
+                        viewportX: step.screenshot.viewportX || 0, // Have to discuss about this
+                        viewportY: step.screenshot.viewportY || 0,
+                        viewportWidth: step.screenshot.viewportWidth || 0,
+                        viewportHeight: step.screenshot.viewportHeight || 0,
+                        devicePixelRatio: step.screenshot.devicePixelRatio || 0,
+                      },
+                    });
+                  } else {
+                    // Create new screenshot
+                    await tx.screenshots.create({
+                      data: {
+                        stepId: step.id,
+                        googleImageId: step.screenshot.googleImageId,
+                        url: step.screenshot.url,
+                        viewportX: step.screenshot.viewportX || 0,
+                        viewportY: step.screenshot.viewportY || 0,
+                        viewportWidth: step.screenshot.viewportWidth || 0,
+                        viewportHeight: step.screenshot.viewportHeight || 0,
+                        devicePixelRatio: step.screenshot.devicePixelRatio || 0,
+                      },
+                    });
+                  }
+                } else {
+                  // Remove screenshot if it exists
+                  const existingStep = existingDocument.steps.find(
+                    (s) => s.id === step.id,
+                  );
+                  if (existingStep?.screenshot) {
+                    await tx.screenshots.delete({
+                      where: { stepId: step.id },
+                    });
+                  }
+                }
+              } else {
+                // Create new step
+                const newStep = await tx.steps.create({
+                  data: {
+                    documentId,
+                    stepDescription: step.stepDescription,
+                    stepNumber: step.stepNumber,
+                    type: step.type,
+                  },
+                });
+
+                // Create screenshot for new step if provided
+                if (step.screenshot) {
+                  await tx.screenshots.create({
+                    data: {
+                      stepId: newStep.id,
+                      googleImageId: step.screenshot.googleImageId,
+                      url: step.screenshot.url,
+                      viewportX: step.screenshot.viewportX || 0,
+                      viewportY: step.screenshot.viewportY || 0,
+                      viewportWidth: step.screenshot.viewportWidth || 0,
+                      viewportHeight: step.screenshot.viewportHeight || 0,
+                      devicePixelRatio: step.screenshot.devicePixelRatio || 0,
+                    },
+                  });
+                }
               }
             }
           }
-        }
 
-        return await tx.documents.findFirst({
-          where: { id: documentId },
-          include: {
-            steps: {
-              include: {
-                screenshot: true,
+          // Return updated document
+          return await tx.documents.findFirst({
+            where: { id: documentId },
+            include: {
+              steps: {
+                include: {
+                  screenshot: true,
+                },
+                orderBy: {
+                  stepNumber: 'asc',
+                },
               },
-              orderBy: {
-                stepNumber: 'asc',
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
               },
             },
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-              },
-            },
-          },
-        });
-      });
+          });
+        },
+        {
+          timeout: 15000,
+        },
+      );
+
+      // Delete images asynchronously AFTER transaction completes
+      if (imagesToDelete.length > 0) {
+        this.deleteImagesAsync(imagesToDelete, userId);
+      }
+
+      return updatedDocument;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
@@ -369,6 +376,22 @@ export class DocumentService {
         `Failed to update document with steps: ${error.message}`,
       );
     }
+  }
+
+  private async deleteImagesAsync(imageIds: string[], userId: string) {
+    const deletePromises = imageIds.map(async (imageId) => {
+      try {
+        await this.googleDriveService.deleteImageFromDrive(imageId, userId);
+        console.log(`Successfully deleted image: ${imageId}`);
+      } catch (error) {
+        console.error(`Failed to delete image ${imageId}:`, error);
+      }
+    });
+
+    // Explicitly handle the promise to prevent unhandled rejections
+    Promise.allSettled(deletePromises).catch((error) => {
+      console.error('Unexpected error in image deletion batch:', error);
+    });
   }
 
   async deleteDocument(documentId: string, userId: string) {
@@ -422,29 +445,13 @@ export class DocumentService {
         throw new BadRequestException('Document not found or access denied');
       }
 
-      const screenshotsToDelete = existingDocument.steps
+      // Collect image IDs to delete
+      const imagesToDelete = existingDocument.steps
         .filter((step) => step.screenshot)
-        .map((step) => step.screenshot!);
+        .map((step) => step.screenshot!.googleImageId);
 
-      // Delete screenshots from Google Drive in parallel
-      const deletePromises = screenshotsToDelete.map((screenshot) =>
-        this.googleDriveService.deleteImageFromDrive(
-          screenshot.googleImageId,
-          userId,
-        ),
-      );
-
-      try {
-        await Promise.allSettled(deletePromises);
-      } catch (error) {
-        console.error(
-          'Some screenshots failed to delete from Google Drive:',
-          error,
-        );
-        // Continue with database deletion even if Google Drive deletion fails
-      }
-
-      return await this.prisma.$transaction(async (tx) => {
+      // Execute database deletion first
+      const deletedDocument = await this.prisma.$transaction(async (tx) => {
         await tx.screenshots.deleteMany({
           where: {
             step: {
@@ -459,6 +466,13 @@ export class DocumentService {
           where: { id: documentId },
         });
       });
+
+      // Delete images asynchronously AFTER database deletion
+      if (imagesToDelete.length > 0) {
+        this.deleteImagesAsync(imagesToDelete, userId);
+      }
+
+      return deletedDocument;
     } catch (error) {
       if (error instanceof BadRequestException) {
         throw error;
