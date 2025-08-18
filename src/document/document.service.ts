@@ -388,7 +388,10 @@ export class DocumentService {
       }
     });
 
-    Promise.allSettled(deletePromises);
+    // Explicitly handle the promise to prevent unhandled rejections
+    Promise.allSettled(deletePromises).catch((error) => {
+      console.error('Unexpected error in image deletion batch:', error);
+    });
   }
 
   async deleteDocument(documentId: string, userId: string) {
