@@ -1,7 +1,11 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import CreateDocumentDto from './dto/create-document.dto';
-
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 
@@ -452,6 +456,11 @@ export class DocumentService {
 
       // Execute database deletion first
       const deletedDocument = await this.prisma.$transaction(async (tx) => {
+        // Delete saved document records first
+        await tx.savedDocuments.deleteMany({
+          where: { documentId },
+        });
+
         await tx.screenshots.deleteMany({
           where: {
             step: {
@@ -557,5 +566,190 @@ export class DocumentService {
         deletedAt: 'desc',
       },
     });
+  }
+
+  // Save/Bookmark documents (including own documents)
+  async saveDocument(userId: string, documentId: string) {
+    try {
+      // Check if document exists and is not deleted
+      const document = await this.prisma.documents.findFirst({
+        where: {
+          id: documentId,
+          isDeleted: false,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+        },
+      });
+
+      if (!document) {
+        throw new NotFoundException('Document not found or has been deleted');
+      }
+
+      // Check if document is already saved by this user
+      const existingSave = await this.prisma.savedDocuments.findUnique({
+        where: {
+          userId_documentId: {
+            userId,
+            documentId,
+          },
+        },
+      });
+
+      if (existingSave) {
+        throw new ConflictException('Document is already saved');
+      }
+
+      // Save the document
+      const savedDocument = await this.prisma.savedDocuments.create({
+        data: {
+          userId,
+          documentId,
+        },
+        include: {
+          document: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              _count: {
+                select: {
+                  steps: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return {
+        message: 'Document saved successfully',
+        savedDocument: savedDocument.document,
+        savedAt: savedDocument.savedAt,
+      };
+    } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ConflictException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Failed to save document: ${error.message}`,
+      );
+    }
+  }
+
+  async unsaveDocument(userId: string, documentId: string) {
+    try {
+      const savedDocument = await this.prisma.savedDocuments.findUnique({
+        where: {
+          userId_documentId: {
+            userId,
+            documentId,
+          },
+        },
+      });
+
+      if (!savedDocument) {
+        throw new NotFoundException('Saved document not found');
+      }
+
+      await this.prisma.savedDocuments.delete({
+        where: {
+          userId_documentId: {
+            userId,
+            documentId,
+          },
+        },
+      });
+
+      return {
+        message: 'Document removed from saved list successfully',
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Failed to unsave document: ${error.message}`,
+      );
+    }
+  }
+
+  async getSavedDocuments(userId: string) {
+    try {
+      const savedDocuments = await this.prisma.savedDocuments.findMany({
+        where: {
+          userId,
+          document: {
+            isDeleted: false,
+          },
+        },
+        include: {
+          document: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              _count: {
+                select: {
+                  steps: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          savedAt: 'desc',
+        },
+      });
+
+      return savedDocuments.map((saved) => ({
+        ...saved.document,
+        savedAt: saved.savedAt,
+      }));
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to retrieve saved documents: ${error.message}`,
+      );
+    }
+  }
+
+  async checkIfDocumentIsSaved(userId: string, documentId: string) {
+    try {
+      const savedDocument = await this.prisma.savedDocuments.findUnique({
+        where: {
+          userId_documentId: {
+            userId,
+            documentId,
+          },
+        },
+      });
+
+      return {
+        isSaved: !!savedDocument,
+        savedAt: savedDocument?.savedAt || null,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to check save status: ${error.message}`,
+      );
+    }
   }
 }
