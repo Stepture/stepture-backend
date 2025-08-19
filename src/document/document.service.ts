@@ -110,15 +110,25 @@ export class DocumentService {
   }
 
   async getDocumentById(documentId: string, userId?: string) {
+    const whereCondition = userId
+      ? {
+          // Authenticated user
+          id: documentId,
+          isDeleted: false,
+          OR: [
+            { userId }, // Only matches actual user ID
+            { isPublic: true },
+          ],
+        }
+      : {
+          // Unauthenticated user
+          id: documentId,
+          isDeleted: false,
+          isPublic: true, // ONLY public documents
+        };
+
     const document = await this.prisma.documents.findFirst({
-      where: {
-        id: documentId,
-        isDeleted: false,
-        OR: [
-          { userId }, // User owns the document
-          { isPublic: true }, // OR document is public
-        ],
-      },
+      where: whereCondition,
       include: {
         steps: {
           include: {

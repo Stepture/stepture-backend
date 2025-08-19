@@ -28,7 +28,6 @@ import { CreateStepDto } from 'src/step/dto/create-step.dto';
 import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 
 @ApiTags('document')
-@Auth()
 @Controller('documents')
 @ApiExtraModels(
   CreateStepDto,
@@ -40,6 +39,7 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
+  @Auth()
   @Post('')
   @ApiBody({ type: CreateDocumentDto })
   @ApiOkResponse({
@@ -58,6 +58,7 @@ export class DocumentController {
     );
   }
 
+  @Auth()
   @Get('')
   @ApiOkResponse({
     description: 'List of user documents',
@@ -68,6 +69,7 @@ export class DocumentController {
     return this.documentService.getUserDocuments(userId);
   }
 
+  @Auth()
   @Put(':id')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiBody({ type: UpdateDocumentWithStepsDto })
@@ -92,6 +94,7 @@ export class DocumentController {
     );
   }
 
+  @Auth()
   @Delete(':id')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({
@@ -104,6 +107,7 @@ export class DocumentController {
     return this.documentService.deleteDocument(documentId, userId);
   }
 
+  @Auth()
   @Delete(':id/permanent')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({
@@ -119,6 +123,7 @@ export class DocumentController {
     return this.documentService.permanentDeleteDocument(documentId, userId);
   }
 
+  @Auth()
   @Put(':id/restore')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({
@@ -132,6 +137,7 @@ export class DocumentController {
     return this.documentService.restoreDocument(documentId, userId);
   }
 
+  @Auth()
   @Get('deleted/list')
   @ApiOkResponse({
     description: 'List of user deleted documents',
@@ -154,6 +160,7 @@ export class DocumentController {
   }
 
   // Save/Bookmark Routes
+  @Auth()
   @Post(':id/save')
   @ApiParam({ name: 'id', type: String, description: 'Document ID to save' })
   @ApiOkResponse({
@@ -166,6 +173,7 @@ export class DocumentController {
     return this.documentService.saveDocument(userId, documentId);
   }
 
+  @Auth()
   @Delete(':id/save')
   @ApiParam({ name: 'id', type: String, description: 'Document ID to unsave' })
   @ApiOkResponse({
@@ -177,6 +185,7 @@ export class DocumentController {
     return this.documentService.unsaveDocument(userId, documentId);
   }
 
+  @Auth()
   @Get('saved/list')
   @ApiOkResponse({
     description: 'List of user saved documents',
@@ -187,6 +196,7 @@ export class DocumentController {
     return this.documentService.getSavedDocuments(userId);
   }
 
+  @Auth()
   @Get(':id/save-status')
   @ApiParam({
     name: 'id',
@@ -201,6 +211,7 @@ export class DocumentController {
     return this.documentService.checkIfDocumentIsSaved(userId, documentId);
   }
 
+  @Auth()
   @Patch(':id/sharing')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiBody({ type: UpdateDocumentSharingDto })
