@@ -8,7 +8,7 @@ import { PrismaService } from 'src/prisma.service';
 import CreateDocumentDto from './dto/create-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
-
+import UpdateDocumentSharingDto from './dto/update-document-sharing.dto';
 @Injectable()
 export class DocumentService {
   constructor(
@@ -20,7 +20,7 @@ export class DocumentService {
     userId: string,
     createDocumentDto: CreateDocumentDto,
   ) {
-    const { title, description, steps } = createDocumentDto;
+    const { title, description, isPublic, steps } = createDocumentDto;
 
     try {
       return await this.prisma.$transaction(
@@ -29,6 +29,7 @@ export class DocumentService {
             data: {
               title,
               description,
+              isPublic: isPublic ?? false,
               userId,
               steps: {
                 create: steps.map((step, index) => ({
@@ -108,12 +109,15 @@ export class DocumentService {
     });
   }
 
-  async getDocumentById(documentId: string, userId: string) {
+  async getDocumentById(documentId: string, userId?: string) {
     const document = await this.prisma.documents.findFirst({
       where: {
         id: documentId,
-        userId,
         isDeleted: false,
+        OR: [
+          { userId }, // User owns the document
+          { isPublic: true }, // OR document is public
+        ],
       },
       include: {
         steps: {
@@ -135,7 +139,7 @@ export class DocumentService {
     });
 
     if (!document) {
-      throw new BadRequestException('Document not found');
+      throw new BadRequestException('Document not found or access denied');
     }
     return document;
   }
@@ -749,6 +753,46 @@ export class DocumentService {
     } catch (error) {
       throw new BadRequestException(
         `Failed to check save status: ${error.message}`,
+      );
+    }
+  }
+
+  async updateDocumentSharing(
+    documentId: string,
+    userId: string,
+    updateDocumentSharingDto: UpdateDocumentSharingDto,
+  ) {
+    try {
+      const document = await this.prisma.documents.findUnique({
+        where: {
+          id: documentId,
+          userId,
+        },
+      });
+
+      if (!document) {
+        throw new NotFoundException('Document not found');
+      }
+
+      const updatedDocument = await this.prisma.documents.update({
+        where: {
+          id: documentId,
+        },
+        data: {
+          isPublic: updateDocumentSharingDto.isPublic,
+        },
+      });
+
+      return {
+        message: 'Document sharing settings updated successfully',
+        document: updatedDocument,
+      };
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(
+        `Failed to update document sharing settings: ${error.message}`,
       );
     }
   }

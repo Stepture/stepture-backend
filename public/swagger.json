@@ -604,6 +604,46 @@
           "document"
         ]
       }
+    },
+    "/documents/{id}/sharing": {
+      "patch": {
+        "operationId": "DocumentController_updateDocumentSharing",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDocumentSharingDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document sharing settings updated successfully"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "404": {
+            "description": "Document not found"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
     }
   },
   "info": {
@@ -829,6 +869,19 @@
           }
         }
       },
+      "UpdateDocumentSharingDto": {
+        "type": "object",
+        "properties": {
+          "isPublic": {
+            "type": "boolean",
+            "description": "Whether the document should be public or private",
+            "example": true
+          }
+        },
+        "required": [
+          "isPublic"
+        ]
+      },
       "SaveOthersDocumentDto": {
         "type": "object",
         "properties": {
@@ -858,6 +911,12 @@
             "example": "A comprehensive step-by-step guide for new administrators to access the dashboard",
             "nullable": true,
             "maxLength": 1000
+          },
+          "isPublic": {
+            "type": "boolean",
+            "description": "Whether the document should be public or private",
+            "example": false,
+            "default": false
           },
           "steps": {
             "description": "Array of steps that make up this document",

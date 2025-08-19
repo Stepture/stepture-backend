@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
+  IsBoolean,
   IsArray,
   ValidateNested,
   ArrayMinSize,
@@ -31,6 +32,16 @@ export class CreateDocumentDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({
+    description: 'Whether the document should be public or private',
+    example: false,
+    required: false,
+    default: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isPublic?: boolean;
 
   @ApiProperty({
     description: 'Array of steps that make up this document',

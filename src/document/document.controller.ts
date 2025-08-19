@@ -5,14 +5,17 @@ import {
   Body,
   Get,
   Put,
+  Patch,
   Delete,
   Param,
 } from '@nestjs/common';
 import { DocumentService } from './document.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { Public } from 'src/auth/decorators/public.decorator';
 import CreateDocumentDto from './dto/create-document.dto';
 import SaveOthersDocumentDto from './dto/save-others-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
+import UpdateDocumentSharingDto from './dto/update-document-sharing.dto';
 import {
   ApiTags,
   ApiBody,
@@ -31,6 +34,7 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
   CreateStepDto,
   CreateScreenshotDto,
   UpdateDocumentWithStepsDto,
+  UpdateDocumentSharingDto,
   SaveOthersDocumentDto,
 )
 export class DocumentController {
@@ -138,12 +142,13 @@ export class DocumentController {
     return this.documentService.getDeletedDocuments(userId);
   }
 
+  @Public()
   @Get(':id')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({ description: 'Document by ID', type: CreateDocumentDto })
   @ApiResponse({ status: 404, description: 'Document not found' })
   async getDocumentById(@Request() req: any) {
-    const userId = req.user.userId;
+    const userId = req.user?.userId; // Optional user ID
     const documentId = req.params.id;
     return this.documentService.getDocumentById(documentId, userId);
   }
@@ -194,5 +199,26 @@ export class DocumentController {
   async checkSaveStatus(@Request() req: any, @Param('id') documentId: string) {
     const userId = req.user.userId;
     return this.documentService.checkIfDocumentIsSaved(userId, documentId);
+  }
+
+  @Patch(':id/sharing')
+  @ApiParam({ name: 'id', type: String, description: 'Document ID' })
+  @ApiBody({ type: UpdateDocumentSharingDto })
+  @ApiOkResponse({
+    description: 'Document sharing settings updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Document not found' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async updateDocumentSharing(
+    @Request() req: any,
+    @Param('id') documentId: string,
+    @Body() updateDocumentSharingDto: UpdateDocumentSharingDto,
+  ) {
+    const userId = req.user.userId;
+    return this.documentService.updateDocumentSharing(
+      documentId,
+      userId,
+      updateDocumentSharingDto,
+    );
   }
 }
