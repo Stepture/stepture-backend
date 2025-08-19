@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
 import CreateDocumentDto from './dto/create-document.dto';
-import SaveOthersDocumentDto from './dto/save-others-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 
