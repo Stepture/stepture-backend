@@ -5,14 +5,17 @@ import {
   Body,
   Get,
   Put,
+  Patch,
   Delete,
   Param,
 } from '@nestjs/common';
 import { DocumentService } from './document.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
+import { Public } from 'src/auth/decorators/public.decorator';
 import CreateDocumentDto from './dto/create-document.dto';
 import SaveOthersDocumentDto from './dto/save-others-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
+import UpdateDocumentSharingDto from './dto/update-document-sharing.dto';
 import {
   ApiTags,
   ApiBody,
@@ -25,17 +28,18 @@ import { CreateStepDto } from 'src/step/dto/create-step.dto';
 import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 
 @ApiTags('document')
-@Auth()
 @Controller('documents')
 @ApiExtraModels(
   CreateStepDto,
   CreateScreenshotDto,
   UpdateDocumentWithStepsDto,
+  UpdateDocumentSharingDto,
   SaveOthersDocumentDto,
 )
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
+  @Auth()
   @Post('')
   @ApiBody({ type: CreateDocumentDto })
   @ApiOkResponse({
@@ -54,6 +58,7 @@ export class DocumentController {
     );
   }
 
+  @Auth()
   @Get('')
   @ApiOkResponse({
     description: 'List of user documents',
@@ -64,6 +69,7 @@ export class DocumentController {
     return this.documentService.getUserDocuments(userId);
   }
 
+  @Auth()
   @Put(':id')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiBody({ type: UpdateDocumentWithStepsDto })
@@ -88,6 +94,7 @@ export class DocumentController {
     );
   }
 
+  @Auth()
   @Delete(':id')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({
@@ -100,6 +107,7 @@ export class DocumentController {
     return this.documentService.deleteDocument(documentId, userId);
   }
 
+  @Auth()
   @Delete(':id/permanent')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({
@@ -115,6 +123,7 @@ export class DocumentController {
     return this.documentService.permanentDeleteDocument(documentId, userId);
   }
 
+  @Auth()
   @Put(':id/restore')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({
@@ -128,6 +137,7 @@ export class DocumentController {
     return this.documentService.restoreDocument(documentId, userId);
   }
 
+  @Auth()
   @Get('deleted/list')
   @ApiOkResponse({
     description: 'List of user deleted documents',
@@ -138,17 +148,19 @@ export class DocumentController {
     return this.documentService.getDeletedDocuments(userId);
   }
 
+  @Public()
   @Get(':id')
   @ApiParam({ name: 'id', type: String, description: 'Document ID' })
   @ApiOkResponse({ description: 'Document by ID', type: CreateDocumentDto })
   @ApiResponse({ status: 404, description: 'Document not found' })
   async getDocumentById(@Request() req: any) {
-    const userId = req.user.userId;
+    const userId = req.user?.userId; // Optional user ID
     const documentId = req.params.id;
     return this.documentService.getDocumentById(documentId, userId);
   }
 
   // Save/Bookmark Routes
+  @Auth()
   @Post(':id/save')
   @ApiParam({ name: 'id', type: String, description: 'Document ID to save' })
   @ApiOkResponse({
@@ -161,6 +173,7 @@ export class DocumentController {
     return this.documentService.saveDocument(userId, documentId);
   }
 
+  @Auth()
   @Delete(':id/save')
   @ApiParam({ name: 'id', type: String, description: 'Document ID to unsave' })
   @ApiOkResponse({
@@ -172,6 +185,7 @@ export class DocumentController {
     return this.documentService.unsaveDocument(userId, documentId);
   }
 
+  @Auth()
   @Get('saved/list')
   @ApiOkResponse({
     description: 'List of user saved documents',
@@ -182,6 +196,7 @@ export class DocumentController {
     return this.documentService.getSavedDocuments(userId);
   }
 
+  @Auth()
   @Get(':id/save-status')
   @ApiParam({
     name: 'id',
@@ -194,5 +209,27 @@ export class DocumentController {
   async checkSaveStatus(@Request() req: any, @Param('id') documentId: string) {
     const userId = req.user.userId;
     return this.documentService.checkIfDocumentIsSaved(userId, documentId);
+  }
+
+  @Auth()
+  @Patch(':id/sharing')
+  @ApiParam({ name: 'id', type: String, description: 'Document ID' })
+  @ApiBody({ type: UpdateDocumentSharingDto })
+  @ApiOkResponse({
+    description: 'Document sharing settings updated successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Document not found' })
+  @ApiResponse({ status: 400, description: 'Bad request' })
+  async updateDocumentSharing(
+    @Request() req: any,
+    @Param('id') documentId: string,
+    @Body() updateDocumentSharingDto: UpdateDocumentSharingDto,
+  ) {
+    const userId = req.user.userId;
+    return this.documentService.updateDocumentSharing(
+      documentId,
+      userId,
+      updateDocumentSharingDto,
+    );
   }
 }

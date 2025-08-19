@@ -51,6 +51,7 @@ model Documents {
   userId      String    @db.Uuid
   isDeleted   Boolean   @default(false)
   deletedAt   DateTime?
+  isPublic    Boolean   @default(false)
 
   user         Users            @relation(fields: [userId], references: [id])
   steps        Steps[]
