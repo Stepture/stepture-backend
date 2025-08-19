@@ -38,7 +38,8 @@ model Users {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  documents Documents[]
+  documents      Documents[]
+  savedDocuments SavedDocuments[]
 }
 
 model Documents {
@@ -51,8 +52,21 @@ model Documents {
   isDeleted   Boolean   @default(false)
   deletedAt   DateTime?
 
-  user  Users   @relation(fields: [userId], references: [id])
-  steps Steps[]
+  user         Users            @relation(fields: [userId], references: [id])
+  steps        Steps[]
+  savedByUsers SavedDocuments[]
+}
+
+model SavedDocuments {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  userId     String   @db.Uuid
+  documentId String   @db.Uuid
+  savedAt    DateTime @default(now())
+
+  user     Users     @relation(fields: [userId], references: [id])
+  document Documents @relation(fields: [documentId], references: [id])
+
+  @@unique([userId, documentId])
 }
 
 model Steps {

@@ -501,6 +501,109 @@
           "document"
         ]
       }
+    },
+    "/documents/{id}/save": {
+      "post": {
+        "operationId": "DocumentController_saveDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID to save",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document saved successfully"
+          },
+          "404": {
+            "description": "Document not found"
+          },
+          "409": {
+            "description": "Document is already saved"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      },
+      "delete": {
+        "operationId": "DocumentController_unsaveDocument",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID to unsave",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document removed from saved list successfully"
+          },
+          "404": {
+            "description": "Saved document not found"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
+    },
+    "/documents/saved/list": {
+      "get": {
+        "operationId": "DocumentController_getSavedDocuments",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "List of user saved documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CreateDocumentDto"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
+    },
+    "/documents/{id}/save-status": {
+      "get": {
+        "operationId": "DocumentController_checkSaveStatus",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "description": "Document ID to check save status",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document save status"
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
     }
   },
   "info": {
@@ -725,6 +828,19 @@
             "type": "array"
           }
         }
+      },
+      "SaveOthersDocumentDto": {
+        "type": "object",
+        "properties": {
+          "documentId": {
+            "type": "string",
+            "description": "The ID of the document to save",
+            "example": "0197c6c1-0666-7be1-bb32-464e9cd7789c"
+          }
+        },
+        "required": [
+          "documentId"
+        ]
       },
       "CreateDocumentDto": {
         "type": "object",

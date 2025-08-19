@@ -11,6 +11,7 @@ import {
 import { DocumentService } from './document.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import CreateDocumentDto from './dto/create-document.dto';
+import SaveOthersDocumentDto from './dto/save-others-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import {
   ApiTags,
@@ -26,7 +27,12 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
 @ApiTags('document')
 @Auth()
 @Controller('documents')
-@ApiExtraModels(CreateStepDto, CreateScreenshotDto, UpdateDocumentWithStepsDto)
+@ApiExtraModels(
+  CreateStepDto,
+  CreateScreenshotDto,
+  UpdateDocumentWithStepsDto,
+  SaveOthersDocumentDto,
+)
 export class DocumentController {
   constructor(private readonly documentService: DocumentService) {}
 
@@ -140,5 +146,53 @@ export class DocumentController {
     const userId = req.user.userId;
     const documentId = req.params.id;
     return this.documentService.getDocumentById(documentId, userId);
+  }
+
+  // Save/Bookmark Routes
+  @Post(':id/save')
+  @ApiParam({ name: 'id', type: String, description: 'Document ID to save' })
+  @ApiOkResponse({
+    description: 'Document saved successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Document not found' })
+  @ApiResponse({ status: 409, description: 'Document is already saved' })
+  async saveDocument(@Request() req: any, @Param('id') documentId: string) {
+    const userId = req.user.userId;
+    return this.documentService.saveDocument(userId, documentId);
+  }
+
+  @Delete(':id/save')
+  @ApiParam({ name: 'id', type: String, description: 'Document ID to unsave' })
+  @ApiOkResponse({
+    description: 'Document removed from saved list successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Saved document not found' })
+  async unsaveDocument(@Request() req: any, @Param('id') documentId: string) {
+    const userId = req.user.userId;
+    return this.documentService.unsaveDocument(userId, documentId);
+  }
+
+  @Get('saved/list')
+  @ApiOkResponse({
+    description: 'List of user saved documents',
+    type: [CreateDocumentDto],
+  })
+  async getSavedDocuments(@Request() req: any) {
+    const userId = req.user.userId;
+    return this.documentService.getSavedDocuments(userId);
+  }
+
+  @Get(':id/save-status')
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'Document ID to check save status',
+  })
+  @ApiOkResponse({
+    description: 'Document save status',
+  })
+  async checkSaveStatus(@Request() req: any, @Param('id') documentId: string) {
+    const userId = req.user.userId;
+    return this.documentService.checkIfDocumentIsSaved(userId, documentId);
   }
 }
