@@ -159,7 +159,7 @@ export class DocumentService {
     userId: string,
     updateDocumentWithStepsDto: UpdateDocumentWithStepsDto,
   ) {
-    const { title, description, steps, deleteStepIds } =
+    const { title, description, annotationColor, steps, deleteStepIds } =
       updateDocumentWithStepsDto;
 
     try {
@@ -236,6 +236,8 @@ export class DocumentService {
           if (title !== undefined) documentUpdateData.title = title;
           if (description !== undefined)
             documentUpdateData.description = description;
+          if (annotationColor !== undefined)
+            documentUpdateData.annotationColor = annotationColor;
 
           if (Object.keys(documentUpdateData).length > 0) {
             await tx.documents.update({

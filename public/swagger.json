@@ -833,6 +833,15 @@
           "type"
         ]
       },
+      "Color": {
+        "type": "string",
+        "enum": [
+          "GREEN",
+          "BLUE",
+          "YELLOW"
+        ],
+        "description": "Color for document annotations"
+      },
       "UpdateDocumentWithStepsDto": {
         "type": "object",
         "properties": {
@@ -849,6 +858,15 @@
             "example": "An updated comprehensive step-by-step guide for administrators",
             "nullable": true,
             "maxLength": 1000
+          },
+          "annotationColor": {
+            "description": "Color for document annotations",
+            "example": "BLUE",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Color"
+              }
+            ]
           },
           "steps": {
             "description": "Array of steps to update/add/delete",
