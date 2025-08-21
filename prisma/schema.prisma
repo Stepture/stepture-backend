@@ -43,15 +43,17 @@ model Users {
 }
 
 model Documents {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  title       String
-  description String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  userId      String    @db.Uuid
-  isDeleted   Boolean   @default(false)
-  deletedAt   DateTime?
-  isPublic    Boolean   @default(false)
+  id                      String    @id @default(uuid(7)) @db.Uuid
+  title                   String
+  description             String?
+  estimatedCompletionTime Int? // in seconds
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  userId                  String    @db.Uuid
+  isDeleted               Boolean   @default(false)
+  deletedAt               DateTime?
+  isPublic                Boolean   @default(false)
+  annotationColor         Color     @default(BLUE)
 
   user         Users            @relation(fields: [userId], references: [id])
   steps        Steps[]
@@ -103,4 +105,10 @@ enum StepType {
   TIPS
   HEADER
   ALERT
+}
+
+enum Color {
+  GREEN
+  BLUE
+  YELLOW
 }

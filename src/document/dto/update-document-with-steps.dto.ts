@@ -9,7 +9,7 @@ import {
   IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { StepType } from '../../../generated/prisma/index';
+import { StepType, Color } from '../../../generated/prisma/index';
 
 export class UpdateScreenshotDto {
   @ApiProperty({
@@ -154,6 +154,17 @@ export class UpdateDocumentWithStepsDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  @ApiProperty({
+    description: 'Color for document annotations',
+    enum: Color,
+    enumName: 'Color',
+    example: Color.BLUE,
+    required: false,
+  })
+  @IsOptional()
+  @IsEnum(Color)
+  annotationColor?: Color;
 
   @ApiProperty({
     description: 'Array of steps to update/add/delete',

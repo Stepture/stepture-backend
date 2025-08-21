@@ -9,18 +9,48 @@ import CreateDocumentDto from './dto/create-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 import UpdateDocumentSharingDto from './dto/update-document-sharing.dto';
+import { CreateStepDto } from 'src/step/dto/create-step.dto';
+
 @Injectable()
 export class DocumentService {
+  private readonly STEP_TIME_SECONDS = {
+    STEP: {
+      withScreenshot: 30,
+      withoutScreenshot: 10,
+    },
+    TIPS: 5,
+    HEADER: 2,
+    ALERT: 8,
+  };
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly googleDriveService: GoogleDriveService,
   ) {}
+
+  private calculateEstimatedTimeInSeconds(steps: any[]): number {
+    return steps.reduce((totalSeconds: number, step: any) => {
+      if (step.type === 'STEP') {
+        return (
+          totalSeconds +
+          (step.screenshot
+            ? this.STEP_TIME_SECONDS.STEP.withScreenshot
+            : this.STEP_TIME_SECONDS.STEP.withoutScreenshot)
+        );
+      }
+
+      return totalSeconds + this.STEP_TIME_SECONDS[step.type];
+    }, 0);
+  }
 
   async createDocumentsWithSteps(
     userId: string,
     createDocumentDto: CreateDocumentDto,
   ) {
     const { title, description, isPublic, steps } = createDocumentDto;
+
+    // Calculate estimated completion time in seconds
+    const estimatedCompletionTime = this.calculateEstimatedTimeInSeconds(steps);
 
     try {
       return await this.prisma.$transaction(
@@ -30,6 +60,7 @@ export class DocumentService {
               title,
               description,
               isPublic: isPublic ?? false,
+              estimatedCompletionTime,
               userId,
               steps: {
                 create: steps.map((step, index) => ({
@@ -159,7 +190,7 @@ export class DocumentService {
     userId: string,
     updateDocumentWithStepsDto: UpdateDocumentWithStepsDto,
   ) {
-    const { title, description, steps, deleteStepIds } =
+    const { title, description, annotationColor, steps, deleteStepIds } =
       updateDocumentWithStepsDto;
 
     try {
@@ -236,6 +267,8 @@ export class DocumentService {
           if (title !== undefined) documentUpdateData.title = title;
           if (description !== undefined)
             documentUpdateData.description = description;
+          if (annotationColor !== undefined)
+            documentUpdateData.annotationColor = annotationColor;
 
           if (Object.keys(documentUpdateData).length > 0) {
             await tx.documents.update({
@@ -351,6 +384,23 @@ export class DocumentService {
                 }
               }
             }
+          }
+
+          // Recalculate estimated completion time if steps were modified
+          if (steps || deleteStepIds) {
+            // Get current steps after all updates
+            const currentSteps = await tx.steps.findMany({
+              where: { documentId },
+              include: { screenshot: true },
+            });
+
+            const newEstimatedTime =
+              this.calculateEstimatedTimeInSeconds(currentSteps);
+
+            await tx.documents.update({
+              where: { id: documentId },
+              data: { estimatedCompletionTime: newEstimatedTime },
+            });
           }
 
           // Return updated document
