@@ -9,7 +9,6 @@ import CreateDocumentDto from './dto/create-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 import UpdateDocumentSharingDto from './dto/update-document-sharing.dto';
-import { CreateStepDto } from 'src/step/dto/create-step.dto';
 
 @Injectable()
 export class DocumentService {
@@ -22,6 +21,8 @@ export class DocumentService {
     HEADER: 2,
     ALERT: 8,
   };
+
+  private readonly DEFAULT_RECENT_DOCUMENTS_LIMIT = 6;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -41,6 +42,78 @@ export class DocumentService {
 
       return totalSeconds + this.STEP_TIME_SECONDS[step.type];
     }, 0);
+  }
+
+  private async updateDocumentAccess(userId: string, documentId: string) {
+    try {
+      // Check if access record exists for this user-document pair
+      const existingAccess = await this.prisma.recentDocumentAccess.findUnique({
+        where: {
+          userId_documentId: {
+            userId,
+            documentId,
+          },
+        },
+      });
+
+      if (existingAccess) {
+        // Update existing access record with new timestamp
+        await this.prisma.recentDocumentAccess.update({
+          where: {
+            userId_documentId: {
+              userId,
+              documentId,
+            },
+          },
+          data: {
+            accessedAt: new Date(),
+          },
+        });
+      } else {
+        // Create new access record
+        await this.prisma.recentDocumentAccess.create({
+          data: {
+            userId,
+            documentId,
+            accessedAt: new Date(),
+          },
+        });
+
+        // Keep only the most recent records (cleanup old ones)
+        await this.cleanupOldAccessRecords(userId);
+      }
+    } catch (error) {
+      // Log error but don't throw - document access tracking shouldn't break document retrieval
+      console.error('Failed to update document access:', error);
+    }
+  }
+
+  private async cleanupOldAccessRecords(
+    userId: string,
+    maxRecords: number = 6,
+  ) {
+    try {
+      // Get all access records for user, ordered by most recent
+      const allAccess = await this.prisma.recentDocumentAccess.findMany({
+        where: { userId },
+        orderBy: { accessedAt: 'desc' },
+        select: { id: true },
+      });
+
+      // If we have more than maxRecords, delete the oldest ones
+      if (allAccess.length > maxRecords) {
+        const toDelete = allAccess.slice(maxRecords);
+        const idsToDelete = toDelete.map((access) => access.id);
+
+        await this.prisma.recentDocumentAccess.deleteMany({
+          where: {
+            id: { in: idsToDelete },
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to cleanup old access records:', error);
+    }
   }
 
   async createDocumentsWithSteps(
@@ -182,6 +255,15 @@ export class DocumentService {
     if (!document) {
       throw new BadRequestException('Document not found or access denied');
     }
+
+    // Track document access for authenticated users
+    if (userId) {
+      // Don't await this to avoid slowing down the response
+      this.updateDocumentAccess(userId, documentId).catch((error) => {
+        console.error('Failed to track document access:', error);
+      });
+    }
+
     return document;
   }
 
@@ -853,6 +935,164 @@ export class DocumentService {
       }
       throw new BadRequestException(
         `Failed to update document sharing settings: ${error.message}`,
+      );
+    }
+  }
+
+  async getRecentDocuments(userId: string, limit?: number) {
+    try {
+      const recentLimit = limit || this.DEFAULT_RECENT_DOCUMENTS_LIMIT;
+
+      const recentAccess = await this.prisma.recentDocumentAccess.findMany({
+        where: {
+          userId,
+          document: {
+            isDeleted: false, // Only include non-deleted documents
+          },
+        },
+        include: {
+          document: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                },
+              },
+              _count: {
+                select: {
+                  steps: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: {
+          accessedAt: 'desc',
+        },
+        take: recentLimit,
+      });
+
+      return recentAccess.map((access) => ({
+        id: access.document.id,
+        title: access.document.title,
+        description: access.document.description,
+        estimatedCompletionTime: access.document.estimatedCompletionTime,
+        createdAt: access.document.createdAt,
+        updatedAt: access.document.updatedAt,
+        lastAccessedAt: access.accessedAt,
+        isPublic: access.document.isPublic,
+        annotationColor: access.document.annotationColor,
+        user: access.document.user,
+        _count: access.document._count,
+      }));
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to retrieve recent documents: ${error.message}`,
+      );
+    }
+  }
+
+  async getHomeDashboard(userId: string) {
+    try {
+      // Get total count of user's documents (excluding deleted)
+      const totalCreated = await this.prisma.documents.count({
+        where: {
+          userId,
+          isDeleted: false,
+        },
+      });
+
+      // Get 3 most recent shared (public) documents
+      const sharedDocuments = await this.prisma.documents.findMany({
+        where: {
+          userId,
+          isDeleted: false,
+          isPublic: true,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              steps: true,
+            },
+          },
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        take: 3,
+      });
+
+      // Get 3 most recent private documents
+      const privateDocuments = await this.prisma.documents.findMany({
+        where: {
+          userId,
+          isDeleted: false,
+          isPublic: false,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          _count: {
+            select: {
+              steps: true,
+            },
+          },
+        },
+        orderBy: {
+          updatedAt: 'desc',
+        },
+        take: 3,
+      });
+
+      // Get 6 most recently accessed documents
+      const recentlyAccessedDocuments = await this.getRecentDocuments(
+        userId,
+        6,
+      );
+
+      return {
+        totalCreated,
+        shared: sharedDocuments.map((doc) => ({
+          id: doc.id,
+          title: doc.title,
+          description: doc.description,
+          estimatedCompletionTime: doc.estimatedCompletionTime,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+          annotationColor: doc.annotationColor,
+          user: doc.user,
+          _count: doc._count,
+        })),
+        private: privateDocuments.map((doc) => ({
+          id: doc.id,
+          title: doc.title,
+          description: doc.description,
+          estimatedCompletionTime: doc.estimatedCompletionTime,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+          annotationColor: doc.annotationColor,
+          user: doc.user,
+          _count: doc._count,
+        })),
+        recentlyAccessed: recentlyAccessedDocuments,
+      };
+    } catch (error) {
+      throw new BadRequestException(
+        `Failed to retrieve home dashboard data: ${error.message}`,
       );
     }
   }
