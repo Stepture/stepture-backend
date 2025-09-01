@@ -313,6 +313,27 @@
         ]
       }
     },
+    "/documents/home": {
+      "get": {
+        "operationId": "DocumentController_getHomeDashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Home dashboard data including totals and categorized documents",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HomeDashboardResponseDto"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "document"
+        ]
+      }
+    },
     "/documents/{id}": {
       "put": {
         "operationId": "DocumentController_updateDocumentWithSteps",
@@ -911,6 +932,192 @@
         },
         "required": [
           "documentId"
+        ]
+      },
+      "DocumentSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-here",
+            "description": "Document unique identifier"
+          },
+          "title": {
+            "type": "string",
+            "example": "How to create a React app",
+            "description": "Document title"
+          },
+          "description": {
+            "type": "string",
+            "example": "Step-by-step guide to create a React application",
+            "description": "Document description"
+          },
+          "estimatedCompletionTime": {
+            "type": "number",
+            "example": 300,
+            "description": "Estimated completion time in seconds"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T10:30:00Z",
+            "description": "When document was created"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T10:30:00Z",
+            "description": "When document was last updated"
+          },
+          "annotationColor": {
+            "type": "string",
+            "example": "BLUE",
+            "description": "Annotation color"
+          },
+          "user": {
+            "type": "object",
+            "description": "Document author information",
+            "example": {
+              "id": "user-uuid",
+              "name": "John Doe",
+              "email": "john@example.com"
+            }
+          },
+          "_count": {
+            "type": "object",
+            "description": "Step count information",
+            "example": {
+              "steps": 5
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt",
+          "updatedAt",
+          "annotationColor",
+          "user",
+          "_count"
+        ]
+      },
+      "RecentDocumentSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "example": "uuid-here",
+            "description": "Document unique identifier"
+          },
+          "title": {
+            "type": "string",
+            "example": "How to create a React app",
+            "description": "Document title"
+          },
+          "description": {
+            "type": "string",
+            "example": "Step-by-step guide to create a React application",
+            "description": "Document description"
+          },
+          "estimatedCompletionTime": {
+            "type": "number",
+            "example": 300,
+            "description": "Estimated completion time in seconds"
+          },
+          "createdAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T10:30:00Z",
+            "description": "When document was created"
+          },
+          "updatedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T10:30:00Z",
+            "description": "When document was last updated"
+          },
+          "annotationColor": {
+            "type": "string",
+            "example": "BLUE",
+            "description": "Annotation color"
+          },
+          "user": {
+            "type": "object",
+            "description": "Document author information",
+            "example": {
+              "id": "user-uuid",
+              "name": "John Doe",
+              "email": "john@example.com"
+            }
+          },
+          "_count": {
+            "type": "object",
+            "description": "Step count information",
+            "example": {
+              "steps": 5
+            }
+          },
+          "lastAccessedAt": {
+            "format": "date-time",
+            "type": "string",
+            "example": "2024-01-15T14:30:00Z",
+            "description": "When document was last accessed"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "createdAt",
+          "updatedAt",
+          "annotationColor",
+          "user",
+          "_count",
+          "lastAccessedAt"
+        ]
+      },
+      "HomeDashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "totalCreated": {
+            "type": "number",
+            "example": 25,
+            "description": "Total number of documents created by user"
+          },
+          "shared": {
+            "description": "Up to 3 most recent shared (public) documents",
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentSummaryDto"
+            }
+          },
+          "private": {
+            "description": "Up to 3 most recent private documents",
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DocumentSummaryDto"
+            }
+          },
+          "recentlyAccessed": {
+            "description": "Up to 6 most recently accessed documents",
+            "maxItems": 6,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RecentDocumentSummaryDto"
+            }
+          },
+          "message": {
+            "type": "string",
+            "example": "Home dashboard data retrieved successfully"
+          }
+        },
+        "required": [
+          "totalCreated",
+          "shared",
+          "private",
+          "recentlyAccessed",
+          "message"
         ]
       },
       "CreateDocumentDto": {

@@ -8,6 +8,7 @@ import {
   Patch,
   Delete,
   Param,
+  BadRequestException,
   UseGuards,
 } from '@nestjs/common';
 import { DocumentService } from './document.service';
@@ -18,6 +19,7 @@ import CreateDocumentDto from './dto/create-document.dto';
 import SaveOthersDocumentDto from './dto/save-others-document.dto';
 import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import UpdateDocumentSharingDto from './dto/update-document-sharing.dto';
+import { HomeDashboardResponseDto } from './dto/home-dashboard.dto';
 import {
   ApiTags,
   ApiBody,
@@ -37,6 +39,7 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
   UpdateDocumentWithStepsDto,
   UpdateDocumentSharingDto,
   SaveOthersDocumentDto,
+  HomeDashboardResponseDto,
 )
 export class DocumentController {
   constructor(
@@ -72,6 +75,23 @@ export class DocumentController {
   async getAllDocuments(@Request() req: any) {
     const userId = req.user.userId;
     return this.documentService.getUserDocuments(userId);
+  }
+
+  @Auth()
+  @Get('home')
+  @ApiOkResponse({
+    description:
+      'Home dashboard data including totals and categorized documents',
+    type: HomeDashboardResponseDto,
+  })
+  async getHomeDashboard(@Request() req: any) {
+    const userId = req.user.userId;
+    const dashboardData = await this.documentService.getHomeDashboard(userId);
+
+    return {
+      ...dashboardData,
+      message: 'Home dashboard data retrieved successfully',
+    };
   }
 
   @Auth()
