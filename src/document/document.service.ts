@@ -10,6 +10,7 @@ import UpdateDocumentWithStepsDto from './dto/update-document-with-steps.dto';
 import { GoogleDriveService } from 'src/google-drive/google-drive.service';
 import UpdateDocumentSharingDto from './dto/update-document-sharing.dto';
 import { CreateStepDto } from 'src/step/dto/create-step.dto';
+import { TitleGenerationService } from './title-generation.service';
 
 @Injectable()
 export class DocumentService {
@@ -26,6 +27,7 @@ export class DocumentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly googleDriveService: GoogleDriveService,
+    private readonly titleGenerationService: TitleGenerationService,
   ) {}
 
   private calculateEstimatedTimeInSeconds(steps: any[]): number {
@@ -49,6 +51,12 @@ export class DocumentService {
   ) {
     const { title, description, isPublic, steps } = createDocumentDto;
 
+    // Always generate title using Gemini for better quality
+    const stepDescriptions = steps.map((step) => step.stepDescription);
+    const titleGenerationResult =
+      await this.titleGenerationService.generateTitle(stepDescriptions);
+    const documentTitle = titleGenerationResult.title;
+    console.log(`Generated document title: ${documentTitle}`);
     // Calculate estimated completion time in seconds
     const estimatedCompletionTime = this.calculateEstimatedTimeInSeconds(steps);
 
@@ -57,7 +65,7 @@ export class DocumentService {
         async (tx) => {
           const document = await tx.documents.create({
             data: {
-              title,
+              title: documentTitle,
               description,
               isPublic: isPublic ?? false,
               estimatedCompletionTime,

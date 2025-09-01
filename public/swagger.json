@@ -918,7 +918,7 @@
         "properties": {
           "title": {
             "type": "string",
-            "description": "The title of the document",
+            "description": "The title of the document. If not provided, will be generated automatically from steps.",
             "example": "How to Login to Admin Dashboard",
             "minLength": 1,
             "maxLength": 200
@@ -1003,7 +1003,6 @@
           }
         },
         "required": [
-          "title",
           "steps"
         ]
       }

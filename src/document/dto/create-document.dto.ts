@@ -13,13 +13,16 @@ import { CreateStepDto } from 'src/step/dto/create-step.dto';
 
 export class CreateDocumentDto {
   @ApiProperty({
-    description: 'The title of the document',
+    description:
+      'The title of the document. If not provided, will be generated automatically from steps.',
     example: 'How to Login to Admin Dashboard',
+    required: false,
     minLength: 1,
     maxLength: 200,
   })
+  @IsOptional()
   @IsString()
-  title: string;
+  title?: string;
 
   @ApiProperty({
     description: 'Optional detailed description of what this document covers',
