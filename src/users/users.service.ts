@@ -1,5 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
+import { StoreApiKeyDto } from './dto/store-api-key.dto';
+import {
+  EncryptedApiKeyResponse,
+  ApiKeyStatusResponse,
+} from './dto/api-key-responses.dto';
 import { PrismaService } from 'src/prisma.service';
 import {
   decryptRefreshToken,
@@ -7,8 +16,6 @@ import {
 } from '../common/utils/crypto.utils';
 import { drive } from '@googleapis/drive';
 import { OAuth2Client } from 'google-auth-library';
-import { access } from 'fs';
-import { GoogleDriveService } from '../google-drive/google-drive.service';
 
 @Injectable()
 export class UsersService {
@@ -204,5 +211,107 @@ export class UsersService {
       refreshToken: decryptedRefreshToken,
       googleDriveRootId: user.googleDriveRootId,
     };
+  }
+
+  // BYOK (Bring Your Own Key) methods
+
+  /**
+   * Store an encrypted Gemini API key for a user
+   */
+  async storeEncryptedApiKey(
+    userId: string,
+    apiKeyData: StoreApiKeyDto,
+  ): Promise<void> {
+    try {
+      await this.prisma.users.update({
+        where: { id: userId },
+        data: {
+          encryptedGeminiKey: apiKeyData.encryptedKey,
+          geminiKeySalt: apiKeyData.salt,
+          geminiKeyIv: apiKeyData.iv,
+          geminiKeyHash: apiKeyData.hash,
+          hasCustomApiKey: true,
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('User not found');
+      }
+      throw new BadRequestException('Failed to store encrypted API key');
+    }
+  }
+
+  /**
+   * Retrieve encrypted Gemini API key for a user
+   */
+  async getEncryptedApiKey(userId: string): Promise<EncryptedApiKeyResponse> {
+    const user = await this.prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        encryptedGeminiKey: true,
+        geminiKeySalt: true,
+        geminiKeyIv: true,
+        geminiKeyHash: true,
+        hasCustomApiKey: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    if (!user.hasCustomApiKey || !user.encryptedGeminiKey) {
+      throw new NotFoundException('No API key found for this user');
+    }
+
+    return {
+      encryptedKey: user.encryptedGeminiKey,
+      salt: user.geminiKeySalt!,
+      iv: user.geminiKeyIv!,
+      hash: user.geminiKeyHash!,
+    };
+  }
+
+  /**
+   * Check if user has a stored API key
+   */
+  async getApiKeyStatus(userId: string): Promise<ApiKeyStatusResponse> {
+    const user = await this.prisma.users.findUnique({
+      where: { id: userId },
+      select: {
+        hasCustomApiKey: true,
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return {
+      hasCustomApiKey: user.hasCustomApiKey,
+    };
+  }
+
+  /**
+   * Delete stored API key for a user
+   */
+  async deleteApiKey(userId: string): Promise<void> {
+    try {
+      await this.prisma.users.update({
+        where: { id: userId },
+        data: {
+          encryptedGeminiKey: null,
+          geminiKeySalt: null,
+          geminiKeyIv: null,
+          geminiKeyHash: null,
+          hasCustomApiKey: false,
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new NotFoundException('User not found');
+      }
+      throw new BadRequestException('Failed to delete API key');
+    }
   }
 }

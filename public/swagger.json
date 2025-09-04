@@ -158,6 +158,117 @@
         ]
       }
     },
+    "/users/api-key": {
+      "post": {
+        "description": "Store a user's encrypted Gemini API key with client-side encryption for BYOK functionality",
+        "operationId": "UsersController_storeApiKey",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StoreApiKeyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "API key stored successfully"
+          },
+          "400": {
+            "description": "Invalid API key data"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Store encrypted Gemini API key",
+        "tags": [
+          "users"
+        ]
+      },
+      "get": {
+        "description": "Retrieve the user's encrypted Gemini API key for client-side decryption",
+        "operationId": "UsersController_getApiKey",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Encrypted API key retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "No API key found for this user"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get encrypted Gemini API key",
+        "tags": [
+          "users"
+        ]
+      },
+      "delete": {
+        "description": "Delete the user's stored encrypted Gemini API key",
+        "operationId": "UsersController_deleteApiKey",
+        "parameters": [],
+        "responses": {
+          "204": {
+            "description": "API key deleted successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete stored API key",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/api-key/status": {
+      "get": {
+        "description": "Check if the user has a stored Gemini API key",
+        "operationId": "UsersController_getApiKeyStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "API key status retrieved successfully"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check API key status",
+        "tags": [
+          "users"
+        ]
+      }
+    },
     "/google-drive/upload-image": {
       "post": {
         "operationId": "GoogleDriveController_uploadImageToDrive",
@@ -728,6 +839,10 @@
           "accessToken",
           "expiresAt"
         ]
+      },
+      "StoreApiKeyDto": {
+        "type": "object",
+        "properties": {}
       },
       "StepType": {
         "type": "string",

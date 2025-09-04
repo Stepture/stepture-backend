@@ -130,7 +130,6 @@ export class DocumentService {
     const titleGenerationResult =
       await this.titleGenerationService.generateTitle(stepDescriptions);
     const documentTitle = titleGenerationResult.title;
-    console.log(`Generated document title: ${documentTitle}`);
     // Calculate estimated completion time in seconds
     const estimatedCompletionTime = this.calculateEstimatedTimeInSeconds(steps);
 
@@ -541,7 +540,6 @@ export class DocumentService {
     const deletePromises = imageIds.map(async (imageId) => {
       try {
         await this.googleDriveService.deleteImageFromDrive(imageId, userId);
-        console.log(`Successfully deleted image: ${imageId}`);
       } catch (error) {
         console.error(`Failed to delete image ${imageId}:`, error);
       }
