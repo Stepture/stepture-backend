@@ -9,8 +9,10 @@ import {
   Delete,
   Param,
   BadRequestException,
+  UseGuards,
 } from '@nestjs/common';
 import { DocumentService } from './document.service';
+import { TitleGenerationService } from './title-generation.service';
 import { Auth } from 'src/auth/decorators/auth.decorator';
 import { OptionalAuth } from 'src/auth/decorators/optional-auth.decorator';
 import CreateDocumentDto from './dto/create-document.dto';
@@ -40,7 +42,10 @@ import CreateScreenshotDto from 'src/screenshot/dto/create-screenshot.dto';
   HomeDashboardResponseDto,
 )
 export class DocumentController {
-  constructor(private readonly documentService: DocumentService) {}
+  constructor(
+    private readonly documentService: DocumentService,
+    private readonly titleGenerationService: TitleGenerationService,
+  ) {}
 
   @Auth()
   @Post('')

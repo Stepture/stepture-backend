@@ -35,6 +35,12 @@ model Users {
 
   googleDriveRootId String?
 
+  encryptedGeminiKey String?
+  geminiKeySalt      String?
+  geminiKeyIv        String?
+  geminiKeyHash      String?
+  hasCustomApiKey    Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

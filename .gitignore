@@ -66,3 +66,5 @@ myapp.sql
 /generated/prisma
 .env.production
 setup-secrets.sh
+
+nestjs_backend_prompt.md

@@ -41,7 +41,6 @@ export class AuthController {
       user.name ?? '',
     );
     // Set HttpOnly cookies for access and refresh tokens
-    console.log(process.env.NODE_ENV);
     res.cookie('access_token', tokens.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -93,7 +92,6 @@ export class AuthController {
   ) {
     const refreshToken = req.cookies['refresh_token'] || req.body.refreshToken;
     if (!refreshToken) {
-      console.log('No refresh token found');
       return { message: 'No refresh token found' };
     }
     try {
@@ -133,7 +131,8 @@ export class AuthController {
   @Public()
   @Get('debug/cookies')
   async debugCookies(
-    @Request() req: import('express').Request & { cookies: Record<string, string> },
+    @Request()
+    req: import('express').Request & { cookies: Record<string, string> },
   ) {
     return {
       cookies: req.cookies,
