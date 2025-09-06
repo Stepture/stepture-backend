@@ -614,6 +614,10 @@ export class DocumentService {
           where: { documentId },
         });
 
+        await tx.recentDocumentAccess.deleteMany({
+          where: { documentId },
+        });
+
         await tx.screenshots.deleteMany({
           where: {
             step: {
